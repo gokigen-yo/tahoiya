@@ -1,0 +1,17 @@
+{
+    "name": "tahoiya-monorepo",
+    "version": "1.0.0",
+    "private": true,
+    "scripts": {
+        "dev:backend": "pnpm --filter backend dev",
+        "dev:frontend": "pnpm --filter frontend dev",
+        "build": "pnpm -r build",
+        "lint": "pnpm -r lint"
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.2",
+        "typescript": "^5.9.3",
+        "@types/node": "^20.10.6",
+        "eslint": "^9.0.0"
+    }
+}
