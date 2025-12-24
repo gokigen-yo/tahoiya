@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "biome check ."
   },
   "dependencies": {
     "@chakra-ui/react": "^3.30.0",
@@ -20,7 +20,6 @@
   },
   "devDependencies": {
     "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint-config-next": "16.1.0"
+    "@types/react-dom": "^19"
   }
 }
