@@ -21,8 +21,9 @@ export class InMemoryRoomRepository implements RoomRepository {
     try {
       await this.eventStore.save(roomId, events, expectedEventCount);
       return ok(undefined);
-    } catch (e: any) {
-      return err({ type: "DomainError", message: e.message });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Unknown error during save";
+      return err({ type: "DomainError", message });
     }
   }
 

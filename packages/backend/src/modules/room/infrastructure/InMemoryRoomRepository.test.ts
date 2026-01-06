@@ -14,7 +14,7 @@ describe("InMemoryRoomRepository", () => {
 
     const successResult = result as Extract<typeof result, { success: true }>;
     const events = successResult.value;
-    const roomId = (events[0] as any).payload.roomId;
+    const roomId = events[0].payload.roomId;
 
     // Save
     await repo.save(roomId, events, 0);

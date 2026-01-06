@@ -33,7 +33,7 @@ describe("CreateRoomUseCase", () => {
     expect(expectedEventCount).toBe(0);
   });
 
-  it("名前が空の場合、エラーを返す（ドメインバリデーション）", async () => {
+  it("プレイヤー名が空の場合、エラーを返す（ドメインバリデーション）", async () => {
     const result = await useCase.execute("");
 
     expect(result.success).toBe(false);

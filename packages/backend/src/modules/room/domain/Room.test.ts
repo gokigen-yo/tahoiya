@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { decideCreateRoom, evolve, type RoomCreated, type WaitingRoom } from "./Room";
 
 describe("decideCreateRoom", () => {
-  it("名前が有効な場合、RoomCreatedイベントを返す", () => {
+  it("RoomCreatedイベントを返す", () => {
     const result = decideCreateRoom("TestPlayer");
 
     expect(result.success).toBe(true);
@@ -17,7 +17,7 @@ describe("decideCreateRoom", () => {
     expect(event.payload.hostId).toBeDefined();
   });
 
-  it("名前が空の場合、エラーを返す", () => {
+  it("プレイヤー名が空の場合、エラーを返す", () => {
     const result = decideCreateRoom("");
 
     expect(result.success).toBe(false);

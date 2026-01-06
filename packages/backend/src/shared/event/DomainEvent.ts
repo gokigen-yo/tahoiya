@@ -1,4 +1,4 @@
-export interface DomainEvent<Payload = any> {
+export interface DomainEvent<Payload> {
   type: string;
   payload: Payload;
   occurredAt: Date;
