@@ -1,0 +1,40 @@
+import { describe, expect, it } from "vitest";
+import { InMemoryEventStore } from "../../../shared/infrastructure/InMemoryEventStore";
+import { decideCreateRoom } from "../domain/Room";
+import { InMemoryRoomRepository } from "./InMemoryRoomRepository";
+
+describe("InMemoryRoomRepository", () => {
+  it("イベントをリプレイしてルームを保存および検索できる", async () => {
+    const eventStore = new InMemoryEventStore();
+    const repo = new InMemoryRoomRepository(eventStore);
+
+    // Create some events for a room
+    const result = decideCreateRoom("TestUser");
+    expect(result.success).toBe(true);
+
+    const successResult = result as Extract<typeof result, { success: true }>;
+    const events = successResult.value;
+    const roomId = (events[0] as any).payload.roomId;
+
+    // Save
+    await repo.save(roomId, events, 0);
+
+    // Find
+    const findResult = await repo.findById(roomId);
+
+    expect(findResult.success).toBe(true);
+    const roomResult = findResult as Extract<typeof findResult, { success: true }>;
+    const room = roomResult.value;
+    expect(room.id).toBe(roomId);
+    expect(room.players[0].name).toBe("TestUser");
+    expect(room.phase).toBe("waiting");
+  });
+
+  it("ルームが見つからない場合、エラーを返す", async () => {
+    const eventStore = new InMemoryEventStore();
+    const repo = new InMemoryRoomRepository(eventStore);
+
+    const result = await repo.findById("non-existent");
+    expect(result.success).toBe(false);
+  });
+});
