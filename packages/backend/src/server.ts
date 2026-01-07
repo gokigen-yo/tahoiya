@@ -3,8 +3,10 @@ import cors from "cors";
 import express from "express";
 import { Server } from "socket.io";
 import { CreateRoomUseCase } from "./modules/room/application/CreateRoomUseCase";
+import { JoinRoomUseCase } from "./modules/room/application/JoinRoomUseCase";
 import { InMemoryRoomRepository } from "./modules/room/infrastructure/InMemoryRoomRepository";
 import { InMemoryEventStore } from "./shared/infrastructure/InMemoryEventStore";
+import { InMemorySessionStore } from "./shared/infrastructure/InMemorySessionStore";
 
 const app = express();
 app.use(cors());
@@ -20,7 +22,9 @@ const io = new Server(server, {
 // Composition Root
 const eventStore = new InMemoryEventStore();
 const roomRepository = new InMemoryRoomRepository(eventStore);
+const sessionStore = new InMemorySessionStore();
 const createRoomUseCase = new CreateRoomUseCase(roomRepository);
+const joinRoomUseCase = new JoinRoomUseCase(roomRepository);
 
 io.on("connection", (socket) => {
   console.log("A user connected:", socket.id);
@@ -37,6 +41,9 @@ io.on("connection", (socket) => {
 
     if (result.success) {
       const { room, player } = result.value;
+
+      sessionStore.bind(socket.id, player.id);
+
       socket.join(room.id);
 
       socket.emit("room_created", {
@@ -50,6 +57,42 @@ io.on("connection", (socket) => {
       socket.emit("error", { message: result.error.message });
     }
   });
+
+  socket.on(
+    "join_room",
+    async (data: { roomId: string; playerName: string; playerId?: string }) => {
+      console.log("join_room received:", data);
+      const result = await joinRoomUseCase.execute({
+        roomId: data.roomId,
+        playerName: data.playerName,
+        playerId: data.playerId,
+      });
+
+      if (result.success) {
+        const { room, playerId } = result.value;
+        const player = room.players.find((p) => p.id === playerId);
+
+        if (player) {
+          sessionStore.bind(socket.id, playerId);
+
+          socket.join(room.id);
+
+          socket.emit("join_success", {
+            roomId: room.id,
+            playerId: playerId,
+          });
+
+          io.to(room.id).emit("update_game_state", {
+            gameState: room,
+          });
+
+          console.log(`Player ${player.name} (${playerId}) joined room ${room.id}`);
+        }
+      } else {
+        socket.emit("error", { message: result.error.message });
+      }
+    },
+  );
 
   socket.on("disconnect", () => {
     console.log("User disconnected:", socket.id);
