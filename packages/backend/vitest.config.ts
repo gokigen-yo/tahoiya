@@ -4,5 +4,10 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
+    typecheck: {
+      enabled: true,
+      tsconfig: "./tsconfig.json",
+      include: ["src/**/*.test.ts"],
+    },
   },
 });
