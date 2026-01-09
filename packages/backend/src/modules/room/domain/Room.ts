@@ -27,11 +27,11 @@ type BaseRoom = {
   hostId: PlayerId;
 };
 
-export type WaitingRoom = BaseRoom & {
-  phase: "waiting";
+export type WaitingForJoinRoom = BaseRoom & {
+  phase: "waiting_for_join";
 };
 
-export type Room = WaitingRoom; // Union of all room types
+export type Room = WaitingForJoinRoom; // Union of all room types
 
 // --- Events ---
 
@@ -88,7 +88,7 @@ export const decideJoinRoom = (
   playerName: string,
   currentVersion: number,
 ): Result<RoomEvent[], DomainError> => {
-  if (room.phase !== "waiting") {
+  if (room.phase !== "waiting_for_join") {
     return err({
       type: "DomainError",
       message: "Room is not in waiting phase",
@@ -132,9 +132,9 @@ export const evolve = (state: Room | null, event: RoomEvent): Room => {
         score: INITIAL_PLAYER_SCORE,
       };
 
-      const newRoom: WaitingRoom = {
+      const newRoom: WaitingForJoinRoom = {
         id: roomId,
-        phase: "waiting",
+        phase: "waiting_for_join",
         round: 1,
         players: [hostPlayer],
         hostId,
