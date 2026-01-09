@@ -6,12 +6,8 @@ import type { DomainError, Room, RoomEvent, RoomId } from "./Room";
 
 export interface RoomRepository {
   // Save new events for a given stream
-  save(
-    roomId: RoomId,
-    events: RoomEvent[],
-    expectedEventCount: number,
-  ): Promise<Result<void, DomainError>>;
+  save(roomId: RoomId, events: RoomEvent[]): Promise<Result<void, DomainError>>;
 
   // Find room by replaying events
-  findById(id: RoomId): Promise<Result<Room, DomainError>>;
+  findById(id: RoomId): Promise<Result<{ room: Room; version: number }, DomainError>>;
 }

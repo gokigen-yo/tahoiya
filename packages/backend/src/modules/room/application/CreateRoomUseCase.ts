@@ -59,7 +59,7 @@ export class CreateRoomUseCase {
 
     // 3. Save: Persist events
     // For creation, expected version is 0 (or empty)
-    const saveResult = await this.roomRepository.save(room.id, events, 0);
+    const saveResult = await this.roomRepository.save(room.id, events);
 
     if (!saveResult.success) {
       return saveResult;

@@ -25,7 +25,6 @@ type BaseRoom = {
   round: number;
   players: Player[];
   hostId: PlayerId;
-  version: number;
 };
 
 export type WaitingRoom = BaseRoom & {
@@ -71,11 +70,15 @@ export const decideCreateRoom = (playerName: string): Result<RoomEvent[], Domain
   const roomId = uuidv4();
   const hostId = uuidv4();
 
-  const event: RoomCreated = createEvent("RoomCreated", {
-    roomId,
-    hostId,
-    hostName: playerName,
-  });
+  const event: RoomCreated = createEvent(
+    "RoomCreated",
+    {
+      roomId,
+      hostId,
+      hostName: playerName,
+    },
+    1,
+  );
 
   return ok([event]);
 };
@@ -83,6 +86,7 @@ export const decideCreateRoom = (playerName: string): Result<RoomEvent[], Domain
 export const decideJoinRoom = (
   room: Room,
   playerName: string,
+  currentVersion: number,
 ): Result<RoomEvent[], DomainError> => {
   if (room.phase !== "waiting") {
     return err({
@@ -101,11 +105,15 @@ export const decideJoinRoom = (
 
   const playerId = uuidv4();
 
-  const event: PlayerJoined = createEvent("PlayerJoined", {
-    roomId: room.id,
-    playerId,
-    playerName,
-  });
+  const event: PlayerJoined = createEvent(
+    "PlayerJoined",
+    {
+      roomId: room.id,
+      playerId,
+      playerName,
+    },
+    currentVersion + 1,
+  );
 
   return ok([event]);
 };
@@ -130,7 +138,6 @@ export const evolve = (state: Room | null, event: RoomEvent): Room => {
         round: 1,
         players: [hostPlayer],
         hostId,
-        version: 1,
       };
       return newRoom;
     }
@@ -149,7 +156,6 @@ export const evolve = (state: Room | null, event: RoomEvent): Room => {
       return {
         ...state,
         players: [...state.players, newPlayer],
-        version: state.version + 1,
       };
     }
     default:

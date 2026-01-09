@@ -32,7 +32,7 @@ export class JoinRoomUseCase {
     if (!roomResult.success) {
       return err(roomResult.error);
     }
-    const room = roomResult.value;
+    const { room, version: currentVersion } = roomResult.value;
 
     // Re-join scenario
     if (playerId) {
@@ -45,13 +45,13 @@ export class JoinRoomUseCase {
     }
 
     // New join scenario
-    const decision = decideJoinRoom(room, playerName);
+    const decision = decideJoinRoom(room, playerName, currentVersion);
     if (!decision.success) {
       return err(decision.error);
     }
 
     const events = decision.value;
-    const saveResult = await this.roomRepository.save(room.id, events, room.version);
+    const saveResult = await this.roomRepository.save(room.id, events);
 
     if (!saveResult.success) {
       return saveResult;
