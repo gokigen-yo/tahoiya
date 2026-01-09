@@ -17,17 +17,18 @@ describe("InMemoryRoomRepository", () => {
     const roomId = events[0].payload.roomId;
 
     // Save
-    await repo.save(roomId, events, 0);
+    await repo.save(roomId, events);
 
     // Find
     const findResult = await repo.findById(roomId);
 
     expect(findResult.success).toBe(true);
     const roomResult = findResult as Extract<typeof findResult, { success: true }>;
-    const room = roomResult.value;
+    const { room, version } = roomResult.value;
     expect(room.id).toBe(roomId);
     expect(room.players[0].name).toBe("TestUser");
     expect(room.phase).toBe("waiting");
+    expect(version).toBe(1);
   });
 
   it("ルームが見つからない場合、エラーを返す", async () => {

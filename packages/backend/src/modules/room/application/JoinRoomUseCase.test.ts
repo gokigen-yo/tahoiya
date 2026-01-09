@@ -25,10 +25,11 @@ describe("JoinRoomUseCase", () => {
       round: 1,
       players: [{ id: "host", name: "Host", score: 0 }],
       hostId: "host",
-      version: 1,
     };
 
-    vi.mocked(mockRoomRepository.findById).mockResolvedValue(ok(existingRoom));
+    vi.mocked(mockRoomRepository.findById).mockResolvedValue(
+      ok({ room: existingRoom, version: 1 }),
+    );
     vi.mocked(mockRoomRepository.save).mockResolvedValue(ok(undefined));
 
     // Act
@@ -59,10 +60,11 @@ describe("JoinRoomUseCase", () => {
       round: 1,
       players: [{ id: "host", name: "Host", score: 0 }],
       hostId: "host",
-      version: 1,
     };
 
-    vi.mocked(mockRoomRepository.findById).mockResolvedValue(ok(existingRoom));
+    vi.mocked(mockRoomRepository.findById).mockResolvedValue(
+      ok({ room: existingRoom, version: 1 }),
+    );
 
     // Act
     const result = await useCase.execute({

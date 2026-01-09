@@ -13,13 +13,9 @@ import type { RoomRepository } from "../domain/RoomRepository";
 export class InMemoryRoomRepository implements RoomRepository {
   constructor(private eventStore: EventStore) {}
 
-  async save(
-    roomId: RoomId,
-    events: RoomEvent[],
-    expectedEventCount: number,
-  ): Promise<Result<void, DomainError>> {
+  async save(roomId: RoomId, events: RoomEvent[]): Promise<Result<void, DomainError>> {
     try {
-      await this.eventStore.save(roomId, events, expectedEventCount);
+      await this.eventStore.save(roomId, events);
       return ok(undefined);
     } catch (e) {
       const message = e instanceof Error ? e.message : "Unknown error during save";
@@ -27,23 +23,25 @@ export class InMemoryRoomRepository implements RoomRepository {
     }
   }
 
-  async findById(roomId: RoomId): Promise<Result<Room, DomainError>> {
+  async findById(roomId: RoomId): Promise<Result<{ room: Room; version: number }, DomainError>> {
     const events = await this.eventStore.load(roomId);
     if (events.length === 0) {
       return err({ type: "DomainError", message: "Room not found" });
     }
 
     let state = getInitialState();
+    let version = 0;
     for (const event of events) {
       // Cast generic DomainEvent to RoomEvent if we had runtime checks.
       // For now we assume the stream only contains RoomEvents.
       state = evolve(state, event as RoomEvent);
+      version = event.version;
     }
 
     if (!state) {
       return err({ type: "DomainError", message: "Room state invalid" });
     }
 
-    return ok(state);
+    return ok({ room: state, version });
   }
 }

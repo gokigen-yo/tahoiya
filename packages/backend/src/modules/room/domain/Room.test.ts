@@ -40,11 +40,10 @@ describe("decideJoinRoom", () => {
       round: 1,
       players: [{ id: "host", name: "Host", score: 0 }],
       hostId: "host",
-      version: 1,
     };
 
     // Act
-    const result = decideJoinRoom(room, "Joiner");
+    const result = decideJoinRoom(room, "Joiner", 1);
 
     // Assert
     expect(result.success).toBe(true);
@@ -66,11 +65,10 @@ describe("decideJoinRoom", () => {
       round: 1,
       players: [],
       hostId: "host",
-      version: 1,
     } as unknown as WaitingRoom;
 
     // Act
-    const result = decideJoinRoom(room, "Joiner");
+    const result = decideJoinRoom(room, "Joiner", 1);
 
     // Assert
     expect(result.success).toBe(false);
@@ -89,11 +87,10 @@ describe("decideJoinRoom", () => {
       round: 1,
       players: players,
       hostId: "p0",
-      version: 1,
     };
 
     // Act
-    const result = decideJoinRoom(room, "Joiner");
+    const result = decideJoinRoom(room, "Joiner", 1);
 
     // Assert
     expect(result.success).toBe(false);
@@ -106,10 +103,9 @@ describe("decideJoinRoom", () => {
       round: 1,
       players: [{ id: "host", name: "Host", score: 0 }],
       hostId: "host",
-      version: 1,
     };
 
-    const result = decideJoinRoom(room, "");
+    const result = decideJoinRoom(room, "", 1);
 
     expect(result.success).toBe(false);
   });
@@ -127,6 +123,7 @@ describe("evolve", () => {
         hostName: "HostName",
       },
       occurredAt: new Date(),
+      version: 1,
     };
 
     const newState = evolve(null, event) as WaitingRoom;
@@ -139,7 +136,6 @@ describe("evolve", () => {
     expect(newState.players[0].id).toBe(hostId);
     expect(newState.players[0].name).toBe("HostName");
     expect(newState.players[0].score).toBe(10);
-    expect(newState.version).toBe(1);
   });
 
   it("PlayerJoinedイベントでプレイヤーが追加される", () => {
@@ -153,7 +149,6 @@ describe("evolve", () => {
       round: 1,
       players: [hostPlayer],
       hostId,
-      version: 1,
     };
 
     const newPlayerId = "player-456";
@@ -165,6 +160,7 @@ describe("evolve", () => {
         playerName: "NewPlayer",
       },
       occurredAt: new Date(),
+      version: 2,
     };
 
     // Act
@@ -174,6 +170,5 @@ describe("evolve", () => {
     expect(newState.players).toHaveLength(2);
     expect(newState.players[1].name).toBe("NewPlayer");
     expect(newState.players[1].score).toBe(10);
-    expect(newState.version).toBe(2);
   });
 });

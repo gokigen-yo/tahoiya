@@ -27,10 +27,9 @@ describe("CreateRoomUseCase", () => {
 
     // Verify repository was called
     expect(mockRepo.save).toHaveBeenCalledTimes(1);
-    const [roomId, events, expectedEventCount] = vi.mocked(mockRepo.save).mock.calls[0];
+    const [roomId, events] = vi.mocked(mockRepo.save).mock.calls[0];
     expect(roomId).toBe(room.id);
     expect(events).toHaveLength(1);
-    expect(expectedEventCount).toBe(0);
   });
 
   it("プレイヤー名が空の場合、エラーを返す（ドメインバリデーション）", async () => {

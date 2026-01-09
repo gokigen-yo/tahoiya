@@ -6,9 +6,9 @@ describe("InMemoryEventStore", () => {
   it("イベントを保存およびロードできる", async () => {
     const store = new InMemoryEventStore();
     const streamId = "stream-1";
-    const event1 = createEvent("TestEvent", { data: 1 });
+    const event1 = createEvent("TestEvent", { data: 1 }, 1);
 
-    await store.save(streamId, [event1], 0);
+    await store.save(streamId, [event1]);
 
     const loadedEvents = await store.load(streamId);
     expect(loadedEvents).toHaveLength(1);
@@ -18,34 +18,33 @@ describe("InMemoryEventStore", () => {
   it("期待されるイベント数（expectedEventCount）を強制する", async () => {
     const store = new InMemoryEventStore();
     const streamId = "stream-1";
-    const event1 = createEvent("TestEvent", { data: 1 });
+    const event1 = createEvent("TestEvent", { data: 1 }, 1);
 
-    await store.save(streamId, [event1], 0);
+    await store.save(streamId, [event1]);
 
-    const event2 = createEvent("TestEvent", { data: 2 });
+    const event2 = createEvent("TestEvent", { data: 2 }, 3); // Wrong version (expected 2)
 
-    // Should fail if expectedEventCount is wrong (0 instead of 1)
-    await expect(store.save(streamId, [event2], 0)).rejects.toThrow();
+    // Should fail if version is wrong
+    await expect(store.save(streamId, [event2])).rejects.toThrow();
 
-    // Should succeed with correct count
-    await store.save(streamId, [event2], 1);
+    // Should succeed with correct version
+    const event2Correct = createEvent("TestEvent", { data: 2 }, 2);
+    await store.save(streamId, [event2Correct]);
   });
 
-  it("イベントを発生時刻（occurredAt）順にロードする", async () => {
+  it("イベントをバージョン順にロードする", async () => {
     const store = new InMemoryEventStore();
     const streamId = "stream-sort";
 
-    const event1 = createEvent("Event1", {});
-    const event2 = createEvent("Event2", {});
+    const event1 = createEvent("Event1", {}, 1);
+    const event2 = createEvent("Event2", {}, 2);
 
-    // Manually tweak timestamps to ensure order (though insertion order usually wins in map impl unless we sort)
-    // Our implementation currently sorts by time.
-    event1.occurredAt = new Date(1000);
-    event2.occurredAt = new Date(2000);
+    // No need to tweak timestamps, sorting is by version
 
     // Save in reverse order? or save separately
     // Let's save them together.
-    await store.save(streamId, [event2, event1], 0);
+    await store.save(streamId, [event1]);
+    await store.save(streamId, [event2]);
 
     const loaded = await store.load(streamId);
     expect(loaded).toHaveLength(2);
