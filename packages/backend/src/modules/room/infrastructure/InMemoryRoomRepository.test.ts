@@ -9,12 +9,12 @@ describe("InMemoryRoomRepository", () => {
     const repo = new InMemoryRoomRepository(eventStore);
 
     // Create some events for a room
-    const result = decideCreateRoom("TestUser");
+    const roomId = "room-1";
+    const result = decideCreateRoom(roomId, "host-1", "TestUser");
     expect(result.success).toBe(true);
 
     const successResult = result as Extract<typeof result, { success: true }>;
     const events = successResult.value;
-    const roomId = events[0].payload.roomId;
 
     // Save
     await repo.save(roomId, events);

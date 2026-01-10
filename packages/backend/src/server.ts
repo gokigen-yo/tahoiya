@@ -40,21 +40,19 @@ io.on("connection", (socket) => {
     const result = await createRoomUseCase.execute(data.playerName);
 
     if (result.success) {
-      const { room, player } = result.value;
+      const { room, playerId } = result.value;
 
-      sessionStore.bind(socket.id, player.id);
+      sessionStore.bind(socket.id, playerId);
 
       socket.join(room.id);
 
       socket.emit("room_created", {
         roomId: room.id,
-        playerId: player.id,
+        playerId: playerId,
         gameState: room,
       });
 
-      console.log(`Room created: ${room.id} by player ${player.name} (${player.id})`);
-    } else {
-      socket.emit("error", { message: result.error.message });
+      console.log(`Room created: ${room.id} by player ${data.playerName} (${playerId})`);
     }
   });
 
