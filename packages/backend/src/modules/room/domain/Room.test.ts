@@ -10,7 +10,9 @@ import {
 
 describe("decideCreateRoom", () => {
   it("RoomCreatedイベントを返す", () => {
-    const result = decideCreateRoom("TestPlayer");
+    const roomId = "room-1";
+    const hostId = "host-1";
+    const result = decideCreateRoom(roomId, hostId, "TestPlayer");
 
     expect(result.success).toBe(true);
 
@@ -20,12 +22,12 @@ describe("decideCreateRoom", () => {
     const event = successResult.value[0] as RoomCreated;
     expect(event.type).toBe("RoomCreated");
     expect(event.payload.hostName).toBe("TestPlayer");
-    expect(event.payload.roomId).toBeDefined();
-    expect(event.payload.hostId).toBeDefined();
+    expect(event.payload.roomId).toBe(roomId);
+    expect(event.payload.hostId).toBe(hostId);
   });
 
   it("プレイヤー名が空の場合、エラーを返す", () => {
-    const result = decideCreateRoom("");
+    const result = decideCreateRoom("room-1", "host-1", "");
 
     expect(result.success).toBe(false);
   });
@@ -42,7 +44,8 @@ describe("decideJoinRoom", () => {
     };
 
     // Act
-    const result = decideJoinRoom(room, "Joiner", 1);
+    const playerId = "joiner-1";
+    const result = decideJoinRoom(room, playerId, "Joiner", 1);
 
     // Assert
     expect(result.success).toBe(true);
@@ -53,7 +56,7 @@ describe("decideJoinRoom", () => {
     expect(event.type).toBe("PlayerJoined");
     expect(event.payload.playerName).toBe("Joiner");
     expect(event.payload.roomId).toBe(room.id);
-    expect(event.payload.playerId).toBeDefined();
+    expect(event.payload.playerId).toBe(playerId);
   });
 
   it("参加待機状態でないルームには参加できない", () => {
@@ -67,7 +70,7 @@ describe("decideJoinRoom", () => {
     } as unknown as WaitingForJoinRoom;
 
     // Act
-    const result = decideJoinRoom(room, "Joiner", 1);
+    const result = decideJoinRoom(room, "joiner-1", "Joiner", 1);
 
     // Assert
     expect(result.success).toBe(false);
@@ -88,7 +91,7 @@ describe("decideJoinRoom", () => {
     };
 
     // Act
-    const result = decideJoinRoom(room, "Joiner", 1);
+    const result = decideJoinRoom(room, "joiner-1", "Joiner", 1);
 
     // Assert
     expect(result.success).toBe(false);
@@ -102,7 +105,7 @@ describe("decideJoinRoom", () => {
       hostId: "host",
     };
 
-    const result = decideJoinRoom(room, "", 1);
+    const result = decideJoinRoom(room, "joiner-1", "", 1);
 
     expect(result.success).toBe(false);
   });

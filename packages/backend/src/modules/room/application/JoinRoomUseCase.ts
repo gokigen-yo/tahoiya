@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from "uuid";
 import type { Result } from "../../../shared/types";
 import { err, ok } from "../../../shared/types";
 import {
@@ -5,7 +6,6 @@ import {
   decideJoinRoom,
   evolve,
   type PlayerId,
-  type PlayerJoined,
   type Room,
   type RoomId,
 } from "../domain/Room";
@@ -45,7 +45,8 @@ export class JoinRoomUseCase {
     }
 
     // New join scenario
-    const decision = decideJoinRoom(room, playerName, currentVersion);
+    const generatedPlayerId = uuidv4();
+    const decision = decideJoinRoom(room, generatedPlayerId, playerName, currentVersion);
     if (!decision.success) {
       return err(decision.error);
     }
@@ -63,13 +64,6 @@ export class JoinRoomUseCase {
       updatedRoom = evolve(updatedRoom, event);
     }
 
-    // Extract new player ID from event to return
-    const joinedEvent = events.find((e) => e.type === "PlayerJoined") as PlayerJoined | undefined;
-    if (!joinedEvent) {
-      return err({ type: "DomainError", message: "PlayerJoined event missing" });
-    }
-    const { playerId: newPlayerId } = joinedEvent.payload;
-
-    return ok({ room: updatedRoom, playerId: newPlayerId });
+    return ok({ room: updatedRoom, playerId: generatedPlayerId });
   }
 }

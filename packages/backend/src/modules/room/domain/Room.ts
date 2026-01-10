@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from "uuid";
 import { createEvent, type DomainEvent } from "../../../shared/event/DomainEvent";
 import { err, ok, type Result } from "../../../shared/types";
 
@@ -189,19 +188,20 @@ export type DomainError = {
 
 // --- Decider (Command -> Events) ---
 
-export const decideCreateRoom = (playerName: string): Result<RoomEvent[], DomainError> => {
+export const decideCreateRoom = (
+  roomId: RoomId,
+  playerId: PlayerId,
+  playerName: string,
+): Result<RoomEvent[], DomainError> => {
   if (!playerName) {
     return err({ type: "DomainError", message: "Player name is required" });
   }
-
-  const roomId = uuidv4();
-  const hostId = uuidv4();
 
   const event: RoomCreated = createEvent(
     "RoomCreated",
     {
       roomId,
-      hostId,
+      hostId: playerId,
       hostName: playerName,
     },
     1,
@@ -212,6 +212,7 @@ export const decideCreateRoom = (playerName: string): Result<RoomEvent[], Domain
 
 export const decideJoinRoom = (
   room: Room,
+  playerId: PlayerId,
   playerName: string,
   currentVersion: number,
 ): Result<RoomEvent[], DomainError> => {
@@ -229,8 +230,6 @@ export const decideJoinRoom = (
   if (!playerName) {
     return err({ type: "DomainError", message: "Player name is required" });
   }
-
-  const playerId = uuidv4();
 
   const event: PlayerJoined = createEvent(
     "PlayerJoined",

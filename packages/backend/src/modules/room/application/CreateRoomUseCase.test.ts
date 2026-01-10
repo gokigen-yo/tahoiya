@@ -21,9 +21,13 @@ describe("CreateRoomUseCase", () => {
     expect(result.success).toBe(true);
 
     const successResult = result as Extract<typeof result, { success: true }>;
-    const { room, player } = successResult.value;
+    const { room, playerId } = successResult.value;
     expect(room.id).toBeDefined();
-    expect(player.name).toBe("TestUser");
+    expect(playerId).toBeDefined();
+
+    const player = room.players.find((p) => p.id === playerId);
+    expect(player).toBeDefined();
+    expect(player?.name).toBe("TestUser");
 
     // Verify repository was called
     expect(mockRepo.save).toHaveBeenCalledTimes(1);
