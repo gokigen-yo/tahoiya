@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ok } from "../../../shared/types";
-import type { WaitingRoom } from "../domain/Room";
+import type { WaitingForJoinRoom } from "../domain/Room";
 import type { RoomRepository } from "../domain/RoomRepository";
 import { JoinRoomUseCase } from "./JoinRoomUseCase";
 
@@ -19,10 +19,9 @@ describe("JoinRoomUseCase", () => {
     // Arrange
     const useCase = new JoinRoomUseCase(mockRoomRepository);
     const roomId = "room-1";
-    const existingRoom: WaitingRoom = {
+    const existingRoom: WaitingForJoinRoom = {
       id: roomId,
-      phase: "waiting",
-      round: 1,
+      phase: "waiting_for_join",
       players: [{ id: "host", name: "Host", score: 0 }],
       hostId: "host",
     };
@@ -54,10 +53,9 @@ describe("JoinRoomUseCase", () => {
     const useCase = new JoinRoomUseCase(mockRoomRepository);
     const roomId = "room-1";
     const hostId = "host";
-    const existingRoom: WaitingRoom = {
+    const existingRoom: WaitingForJoinRoom = {
       id: roomId,
-      phase: "waiting",
-      round: 1,
+      phase: "waiting_for_join",
       players: [{ id: "host", name: "Host", score: 0 }],
       hostId: "host",
     };

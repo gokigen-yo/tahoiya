@@ -27,7 +27,7 @@ describe("InMemoryRoomRepository", () => {
     const { room, version } = roomResult.value;
     expect(room.id).toBe(roomId);
     expect(room.players[0].name).toBe("TestUser");
-    expect(room.phase).toBe("waiting");
+    expect(room.phase).toBe("waiting_for_join");
     expect(version).toBe(1);
   });
 

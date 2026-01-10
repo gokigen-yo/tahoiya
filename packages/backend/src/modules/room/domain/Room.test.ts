@@ -5,7 +5,7 @@ import {
   evolve,
   type PlayerJoined,
   type RoomCreated,
-  type WaitingRoom,
+  type WaitingForJoinRoom,
 } from "./Room";
 
 describe("decideCreateRoom", () => {
@@ -32,12 +32,11 @@ describe("decideCreateRoom", () => {
 });
 
 describe("decideJoinRoom", () => {
-  it("waiting状態のルームに参加できる", () => {
+  it("参加待機状態のルームに参加できる", () => {
     // Arrange
-    const room: WaitingRoom = {
+    const room: WaitingForJoinRoom = {
       id: "room-1",
-      phase: "waiting",
-      round: 1,
+      phase: "waiting_for_join",
       players: [{ id: "host", name: "Host", score: 0 }],
       hostId: "host",
     };
@@ -57,7 +56,7 @@ describe("decideJoinRoom", () => {
     expect(event.payload.playerId).toBeDefined();
   });
 
-  it("waiting状態でないルームには参加できない", () => {
+  it("参加待機状態でないルームには参加できない", () => {
     // Arrange
     const room = {
       id: "room-1",
@@ -65,7 +64,7 @@ describe("decideJoinRoom", () => {
       round: 1,
       players: [],
       hostId: "host",
-    } as unknown as WaitingRoom;
+    } as unknown as WaitingForJoinRoom;
 
     // Act
     const result = decideJoinRoom(room, "Joiner", 1);
@@ -81,10 +80,9 @@ describe("decideJoinRoom", () => {
       name: `P${i}`,
       score: 0,
     }));
-    const room: WaitingRoom = {
+    const room: WaitingForJoinRoom = {
       id: "room-1",
-      phase: "waiting",
-      round: 1,
+      phase: "waiting_for_join",
       players: players,
       hostId: "p0",
     };
@@ -97,10 +95,9 @@ describe("decideJoinRoom", () => {
   });
 
   it("名前が空の場合は参加できない", () => {
-    const room: WaitingRoom = {
+    const room: WaitingForJoinRoom = {
       id: "room-1",
-      phase: "waiting",
-      round: 1,
+      phase: "waiting_for_join",
       players: [{ id: "host", name: "Host", score: 0 }],
       hostId: "host",
     };
@@ -112,7 +109,7 @@ describe("decideJoinRoom", () => {
 });
 
 describe("evolve", () => {
-  it("RoomCreatedイベントからWaitingRoomを作成する", () => {
+  it("RoomCreatedイベントからWaitingForJoinRoomを作成する", () => {
     const roomId = "room-123";
     const hostId = "player-123";
     const event: RoomCreated = {
@@ -126,11 +123,11 @@ describe("evolve", () => {
       version: 1,
     };
 
-    const newState = evolve(null, event) as WaitingRoom;
+    const newState = evolve(null, event) as WaitingForJoinRoom;
 
     expect(newState).toBeDefined();
     expect(newState.id).toBe(roomId);
-    expect(newState.phase).toBe("waiting");
+    expect(newState.phase).toBe("waiting_for_join");
     expect(newState.hostId).toBe(hostId);
     expect(newState.players).toHaveLength(1);
     expect(newState.players[0].id).toBe(hostId);
@@ -143,10 +140,9 @@ describe("evolve", () => {
     const roomId = "room-123";
     const hostId = "host-123";
     const hostPlayer = { id: hostId, name: "Host", score: 10 };
-    const initialState: WaitingRoom = {
+    const initialState: WaitingForJoinRoom = {
       id: roomId,
-      phase: "waiting",
-      round: 1,
+      phase: "waiting_for_join",
       players: [hostPlayer],
       hostId,
     };
