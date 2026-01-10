@@ -22,7 +22,6 @@ describe("JoinRoomUseCase", () => {
     const existingRoom: WaitingForJoinRoom = {
       id: roomId,
       phase: "waiting_for_join",
-      round: 1,
       players: [{ id: "host", name: "Host", score: 0 }],
       hostId: "host",
     };
@@ -57,7 +56,6 @@ describe("JoinRoomUseCase", () => {
     const existingRoom: WaitingForJoinRoom = {
       id: roomId,
       phase: "waiting_for_join",
-      round: 1,
       players: [{ id: "host", name: "Host", score: 0 }],
       hostId: "host",
     };

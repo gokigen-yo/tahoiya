@@ -22,7 +22,6 @@ export type Player = {
 // Base properties common to all rooms
 type BaseRoom = {
   id: RoomId;
-  round: number;
   players: Player[];
   hostId: PlayerId;
 };
@@ -33,11 +32,13 @@ export type WaitingForJoinRoom = BaseRoom & {
 
 export type ThemeInputRoom = BaseRoom & {
   phase: "theme_input";
+  round: number;
   parentPlayerId: PlayerId;
 };
 
 export type MeaningInputRoom = BaseRoom & {
   phase: "meaning_input";
+  round: number;
   parentPlayerId: PlayerId;
   theme: string;
   meanings: {
@@ -48,6 +49,7 @@ export type MeaningInputRoom = BaseRoom & {
 
 export type VotingRoom = BaseRoom & {
   phase: "voting";
+  round: number;
   parentPlayerId: PlayerId;
   theme: string;
   meanings: {
@@ -64,6 +66,7 @@ export type VotingRoom = BaseRoom & {
 
 export type RoundResultRoom = BaseRoom & {
   phase: "round_result";
+  round: number;
   parentPlayerId: PlayerId;
   theme: string;
   meanings: {
@@ -259,7 +262,6 @@ export const evolve = (state: Room | null, event: RoomEvent): Room => {
       const newRoom: WaitingForJoinRoom = {
         id: roomId,
         phase: "waiting_for_join",
-        round: 1,
         players: [hostPlayer],
         hostId,
       };

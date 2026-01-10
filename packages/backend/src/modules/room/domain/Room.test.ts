@@ -37,7 +37,6 @@ describe("decideJoinRoom", () => {
     const room: WaitingForJoinRoom = {
       id: "room-1",
       phase: "waiting_for_join",
-      round: 1,
       players: [{ id: "host", name: "Host", score: 0 }],
       hostId: "host",
     };
@@ -84,7 +83,6 @@ describe("decideJoinRoom", () => {
     const room: WaitingForJoinRoom = {
       id: "room-1",
       phase: "waiting_for_join",
-      round: 1,
       players: players,
       hostId: "p0",
     };
@@ -100,7 +98,6 @@ describe("decideJoinRoom", () => {
     const room: WaitingForJoinRoom = {
       id: "room-1",
       phase: "waiting_for_join",
-      round: 1,
       players: [{ id: "host", name: "Host", score: 0 }],
       hostId: "host",
     };
@@ -146,7 +143,6 @@ describe("evolve", () => {
     const initialState: WaitingForJoinRoom = {
       id: roomId,
       phase: "waiting_for_join",
-      round: 1,
       players: [hostPlayer],
       hostId,
     };
