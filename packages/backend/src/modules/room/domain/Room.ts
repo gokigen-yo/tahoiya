@@ -31,7 +31,64 @@ export type WaitingForJoinRoom = BaseRoom & {
   phase: "waiting_for_join";
 };
 
-export type Room = WaitingForJoinRoom; // Union of all room types
+export type ThemeInputRoom = BaseRoom & {
+  phase: "theme_input";
+  parentPlayerId: PlayerId;
+};
+
+export type MeaningInputRoom = BaseRoom & {
+  phase: "meaning_input";
+  parentPlayerId: PlayerId;
+  theme: string;
+  meanings: {
+    playerId: PlayerId;
+    text: string;
+  }[];
+};
+
+export type VotingRoom = BaseRoom & {
+  phase: "voting";
+  parentPlayerId: PlayerId;
+  theme: string;
+  meanings: {
+    playerId: PlayerId;
+    text: string;
+    choiceIndex: number;
+  }[];
+  votes: {
+    playerId: PlayerId;
+    choiceIndex: number;
+    betPoints: number;
+  }[];
+};
+
+export type RoundResultRoom = BaseRoom & {
+  phase: "round_result";
+  parentPlayerId: PlayerId;
+  theme: string;
+  meanings: {
+    playerId: PlayerId;
+    text: string;
+    choiceIndex: number;
+  }[];
+  votes: {
+    playerId: PlayerId;
+    choiceIndex: number;
+    betPoints: number;
+  }[];
+};
+
+export type FinalResultRoom = BaseRoom & {
+  phase: "final_result";
+};
+
+export type Room =
+  | WaitingForJoinRoom
+  | ThemeInputRoom
+  | MeaningInputRoom
+  | VotingRoom
+  | RoundResultRoom
+  | FinalResultRoom;
 
 // --- Events ---
 
@@ -47,11 +104,78 @@ export type PlayerJoinedPayload = {
   playerName: string;
 };
 
+export type GameStartedPayload = {
+  roomId: RoomId;
+  playerId: PlayerId;
+};
+
+export type ThemeInputtedPayload = {
+  roomId: RoomId;
+  playerId: PlayerId;
+  theme: string;
+};
+
+export type MeaningInputtedPayload = {
+  roomId: RoomId;
+  playerId: PlayerId;
+  theme: string;
+  meaning: string;
+};
+
+export type VoteSubmittedPayload = {
+  roomId: RoomId;
+  playerId: PlayerId;
+  theme: string;
+  choiceIndex: number;
+  betPoints: number;
+};
+
+export type ScoreUpdatedPayload = {
+  roomId: RoomId;
+  playerId: PlayerId;
+  betPoints: number;
+  meaningSubmittedPlayerId: PlayerId;
+  isChoosingCorrectMeaning: boolean;
+  parentPlayerId: PlayerId;
+};
+
+export type AllChildrenMissedPayload = {
+  roomId: RoomId;
+  parentPlayerId: PlayerId;
+  gainedPoints: number;
+};
+
+export type NextRoundStartedPayload = {
+  roomId: RoomId;
+  playerId: PlayerId;
+};
+
+export type GameEndedPayload = {
+  roomId: RoomId;
+};
+
 export type RoomCreated = DomainEvent<RoomCreatedPayload>;
-
 export type PlayerJoined = DomainEvent<PlayerJoinedPayload>;
+export type GameStarted = DomainEvent<GameStartedPayload>;
+export type ThemeInputted = DomainEvent<ThemeInputtedPayload>;
+export type MeaningInputted = DomainEvent<MeaningInputtedPayload>;
+export type VoteSubmitted = DomainEvent<VoteSubmittedPayload>;
+export type ScoreUpdated = DomainEvent<ScoreUpdatedPayload>;
+export type AllChildrenMissed = DomainEvent<AllChildrenMissedPayload>;
+export type NextRoundStarted = DomainEvent<NextRoundStartedPayload>;
+export type GameEnded = DomainEvent<GameEndedPayload>;
 
-export type RoomEvent = RoomCreated | PlayerJoined; // Union of all room events
+export type RoomEvent =
+  | RoomCreated
+  | PlayerJoined
+  | GameStarted
+  | ThemeInputted
+  | MeaningInputted
+  | VoteSubmitted
+  | ScoreUpdated
+  | AllChildrenMissed
+  | NextRoundStarted
+  | GameEnded;
 
 // --- Domain Errors ---
 
