@@ -14,75 +14,75 @@ export type PlayerId = string;
 // --- Entity Types (Discriminated Unions) ---
 
 export type Player = {
-  id: PlayerId;
-  name: string;
-  score: number;
+  readonly id: PlayerId;
+  readonly name: string;
+  readonly score: number;
 };
 
 // Base properties common to all rooms
 type BaseRoom = {
-  id: RoomId;
-  players: Player[];
-  hostId: PlayerId;
+  readonly id: RoomId;
+  readonly players: Player[];
+  readonly hostId: PlayerId;
 };
 
 export type WaitingForJoinRoom = BaseRoom & {
-  phase: "waiting_for_join";
+  readonly phase: "waiting_for_join";
 };
 
 export type ThemeInputRoom = BaseRoom & {
-  phase: "theme_input";
-  round: number;
-  parentPlayerId: PlayerId;
+  readonly phase: "theme_input";
+  readonly round: number;
+  readonly parentPlayerId: PlayerId;
 };
 
 export type MeaningInputRoom = BaseRoom & {
-  phase: "meaning_input";
-  round: number;
-  parentPlayerId: PlayerId;
-  theme: string;
-  meanings: {
-    playerId: PlayerId;
-    text: string;
+  readonly phase: "meaning_input";
+  readonly round: number;
+  readonly parentPlayerId: PlayerId;
+  readonly theme: string;
+  readonly meanings: {
+    readonly playerId: PlayerId;
+    readonly text: string;
   }[];
 };
 
 export type VotingRoom = BaseRoom & {
-  phase: "voting";
-  round: number;
-  parentPlayerId: PlayerId;
-  theme: string;
-  meanings: {
-    playerId: PlayerId;
-    text: string;
-    choiceIndex: number;
+  readonly phase: "voting";
+  readonly round: number;
+  readonly parentPlayerId: PlayerId;
+  readonly theme: string;
+  readonly meanings: {
+    readonly playerId: PlayerId;
+    readonly text: string;
+    readonly choiceIndex: number;
   }[];
-  votes: {
-    playerId: PlayerId;
-    choiceIndex: number;
-    betPoints: number;
+  readonly votes: {
+    readonly playerId: PlayerId;
+    readonly choiceIndex: number;
+    readonly betPoints: number;
   }[];
 };
 
 export type RoundResultRoom = BaseRoom & {
-  phase: "round_result";
-  round: number;
-  parentPlayerId: PlayerId;
-  theme: string;
-  meanings: {
-    playerId: PlayerId;
-    text: string;
-    choiceIndex: number;
+  readonly phase: "round_result";
+  readonly round: number;
+  readonly parentPlayerId: PlayerId;
+  readonly theme: string;
+  readonly meanings: {
+    readonly playerId: PlayerId;
+    readonly text: string;
+    readonly choiceIndex: number;
   }[];
-  votes: {
-    playerId: PlayerId;
-    choiceIndex: number;
-    betPoints: number;
+  readonly votes: {
+    readonly playerId: PlayerId;
+    readonly choiceIndex: number;
+    readonly betPoints: number;
   }[];
 };
 
 export type FinalResultRoom = BaseRoom & {
-  phase: "final_result";
+  readonly phase: "final_result";
 };
 
 export type Room =
@@ -96,65 +96,65 @@ export type Room =
 // --- Events ---
 
 export type RoomCreatedPayload = {
-  roomId: RoomId;
-  hostId: PlayerId;
-  hostName: string;
+  readonly roomId: RoomId;
+  readonly hostId: PlayerId;
+  readonly hostName: string;
 };
 
 export type PlayerJoinedPayload = {
-  roomId: RoomId;
-  playerId: PlayerId;
-  playerName: string;
+  readonly roomId: RoomId;
+  readonly playerId: PlayerId;
+  readonly playerName: string;
 };
 
 export type GameStartedPayload = {
-  roomId: RoomId;
-  playerId: PlayerId;
+  readonly roomId: RoomId;
+  readonly playerId: PlayerId;
 };
 
 export type ThemeInputtedPayload = {
-  roomId: RoomId;
-  playerId: PlayerId;
-  theme: string;
+  readonly roomId: RoomId;
+  readonly playerId: PlayerId;
+  readonly theme: string;
 };
 
 export type MeaningInputtedPayload = {
-  roomId: RoomId;
-  playerId: PlayerId;
-  theme: string;
-  meaning: string;
+  readonly roomId: RoomId;
+  readonly playerId: PlayerId;
+  readonly theme: string;
+  readonly meaning: string;
 };
 
 export type VoteSubmittedPayload = {
-  roomId: RoomId;
-  playerId: PlayerId;
-  theme: string;
-  choiceIndex: number;
-  betPoints: number;
+  readonly roomId: RoomId;
+  readonly playerId: PlayerId;
+  readonly theme: string;
+  readonly choiceIndex: number;
+  readonly betPoints: number;
 };
 
 export type ScoreUpdatedPayload = {
-  roomId: RoomId;
-  playerId: PlayerId;
-  betPoints: number;
-  meaningSubmittedPlayerId: PlayerId;
-  isChoosingCorrectMeaning: boolean;
-  parentPlayerId: PlayerId;
+  readonly roomId: RoomId;
+  readonly playerId: PlayerId;
+  readonly betPoints: number;
+  readonly meaningSubmittedPlayerId: PlayerId;
+  readonly isChoosingCorrectMeaning: boolean;
+  readonly parentPlayerId: PlayerId;
 };
 
 export type AllChildrenMissedPayload = {
-  roomId: RoomId;
-  parentPlayerId: PlayerId;
-  gainedPoints: number;
+  readonly roomId: RoomId;
+  readonly parentPlayerId: PlayerId;
+  readonly gainedPoints: number;
 };
 
 export type NextRoundStartedPayload = {
-  roomId: RoomId;
-  playerId: PlayerId;
+  readonly roomId: RoomId;
+  readonly playerId: PlayerId;
 };
 
 export type GameEndedPayload = {
-  roomId: RoomId;
+  readonly roomId: RoomId;
 };
 
 export type RoomCreated = DomainEvent<RoomCreatedPayload>;
@@ -183,8 +183,8 @@ export type RoomEvent =
 // --- Domain Errors ---
 
 export type DomainError = {
-  type: "DomainError";
-  message: string;
+  readonly type: "DomainError";
+  readonly message: string;
 };
 
 // --- Decider (Command -> Events) ---
