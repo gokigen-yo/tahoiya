@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   decideCreateRoom,
   decideJoinRoom,
+  decideStartGame,
   evolve,
+  type GameStarted,
   type PlayerJoined,
   type RoomCreated,
   type WaitingForJoinRoom,
@@ -111,6 +113,98 @@ describe("decideJoinRoom", () => {
   });
 });
 
+describe("decideStartGame", () => {
+  it("ホストがゲームを開始できる", () => {
+    // Arrange
+    const hostId = "host";
+    const room: WaitingForJoinRoom = {
+      id: "room-1",
+      phase: "waiting_for_join",
+      hostId,
+      players: [
+        { id: hostId, name: "Host", score: 10 },
+        { id: "p2", name: "P2", score: 10 },
+        { id: "p3", name: "P3", score: 10 },
+      ],
+    };
+
+    // Act
+    const result = decideStartGame(room, hostId, 1);
+
+    // Assert
+    expect(result.success).toBe(true);
+    const successResult = result as Extract<typeof result, { success: true }>;
+    expect(successResult.value).toHaveLength(1);
+    const event = successResult.value[0] as GameStarted;
+    expect(event.type).toBe("GameStarted");
+    expect(event.payload.roomId).toBe(room.id);
+    expect(event.payload.playerId).toBe(hostId);
+  });
+
+  it("ホスト以外はゲームを開始できない", () => {
+    // Arrange
+    const hostId = "host";
+    const otherPlayerId = "p2";
+    const room: WaitingForJoinRoom = {
+      id: "room-1",
+      phase: "waiting_for_join",
+      hostId,
+      players: [
+        { id: hostId, name: "Host", score: 10 },
+        { id: otherPlayerId, name: "P2", score: 10 },
+        { id: "p3", name: "P3", score: 10 },
+      ],
+    };
+
+    // Act
+    const result = decideStartGame(room, otherPlayerId, 1);
+
+    // Assert
+    expect(result.success).toBe(false);
+  });
+
+  it("3人未満ではゲームを開始できない", () => {
+    // Arrange
+    const hostId = "host";
+    const room: WaitingForJoinRoom = {
+      id: "room-1",
+      phase: "waiting_for_join",
+      hostId,
+      players: [
+        { id: hostId, name: "Host", score: 10 },
+        { id: "p2", name: "P2", score: 10 },
+      ],
+    };
+
+    // Act
+    const result = decideStartGame(room, hostId, 1);
+
+    // Assert
+    expect(result.success).toBe(false);
+  });
+
+  it("待機フェーズ以外ではゲームを開始できない", () => {
+    // Arrange
+    const hostId = "host";
+    const room = {
+      id: "room-1",
+      phase: "theme_input", // Already started
+      players: [
+        { id: hostId, name: "Host", score: 10 },
+        { id: "p2", name: "P2", score: 10 },
+        { id: "p3", name: "P3", score: 10 },
+      ],
+      hostId,
+    } as unknown as WaitingForJoinRoom; // Force type for test
+
+    // Act
+    const result = decideStartGame(room, hostId, 1);
+
+    // Assert
+    expect(result.success).toBe(false);
+  });
+});
+
 describe("evolve", () => {
   it("RoomCreatedイベントからWaitingForJoinRoomを作成する", () => {
     const roomId = "room-123";
@@ -169,5 +263,40 @@ describe("evolve", () => {
     expect(newState.players).toHaveLength(2);
     expect(newState.players[1].name).toBe("NewPlayer");
     expect(newState.players[1].score).toBe(10);
+  });
+
+  it("GameStartedイベントでゲームが開始される", () => {
+    // Arrange
+    const roomId = "room-1";
+    const hostId = "host";
+    const initialState: WaitingForJoinRoom = {
+      id: roomId,
+      phase: "waiting_for_join",
+      hostId,
+      players: [
+        { id: hostId, name: "Host", score: 10 },
+        { id: "p2", name: "P2", score: 10 },
+        { id: "p3", name: "P3", score: 10 },
+      ],
+    };
+
+    const event: GameStarted = {
+      type: "GameStarted",
+      payload: {
+        roomId,
+        playerId: hostId,
+      },
+      occurredAt: new Date(),
+      version: 2,
+    };
+
+    // Act
+    const newState = evolve(initialState, event);
+
+    // Assert
+    expect(newState.phase).toBe("theme_input");
+    const themeInputRoom = newState as Extract<typeof newState, { phase: "theme_input" }>;
+    expect(themeInputRoom.round).toBe(1);
+    expect(themeInputRoom.parentPlayerId).toBe(hostId);
   });
 });
