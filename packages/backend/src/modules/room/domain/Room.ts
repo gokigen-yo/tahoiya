@@ -244,6 +244,44 @@ export const decideJoinRoom = (
   return ok([event]);
 };
 
+export const decideStartGame = (
+  room: Room,
+  playerId: PlayerId,
+  currentVersion: number,
+): Result<RoomEvent[], DomainError> => {
+  if (room.phase !== "waiting_for_join") {
+    return err({
+      type: "DomainError",
+      message: "Room is not in waiting phase",
+    });
+  }
+
+  if (room.hostId !== playerId) {
+    return err({
+      type: "DomainError",
+      message: "Only host can start the game",
+    });
+  }
+
+  if (room.players.length < 3) {
+    return err({
+      type: "DomainError",
+      message: "At least 3 players are required to start the game",
+    });
+  }
+
+  const event: GameStarted = createEvent(
+    "GameStarted",
+    {
+      roomId: room.id,
+      playerId,
+    },
+    currentVersion + 1,
+  );
+
+  return ok([event]);
+};
+
 // --- Evolver (State + Event -> State) ---
 
 export const getInitialState = (): Room | null => null;
@@ -282,6 +320,21 @@ export const evolve = (state: Room | null, event: RoomEvent): Room => {
         ...state,
         players: [...state.players, newPlayer],
       };
+    }
+
+    case "GameStarted": {
+      if (!state) {
+        throw new Error("Cannot start game for non-existent room");
+      }
+
+      const newRoom: ThemeInputRoom = {
+        ...state,
+        phase: "theme_input",
+        round: 1,
+        parentPlayerId: state.hostId,
+      };
+
+      return newRoom;
     }
     default:
       return state as Room; // Should not happen if types are correct
