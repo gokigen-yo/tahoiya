@@ -5,14 +5,14 @@ import {
   type ThemeInputRoom,
   type WaitingForJoinRoom,
 } from "./Room";
-import type { PlayerJoinedPayload, RoomCreatedPayload, RoomEvent } from "./RoomEvents";
+import type { RoomEvent } from "./RoomEvents";
 
 export const getInitialState = (): Room | null => null;
 
 export const evolve = (state: Room | null, event: RoomEvent): Room => {
   switch (event.type) {
     case "RoomCreated": {
-      const { roomId, hostId, hostName } = event.payload as RoomCreatedPayload;
+      const { roomId, hostId, hostName } = event.payload;
       const hostPlayer: Player = {
         id: hostId,
         name: hostName,
@@ -28,7 +28,7 @@ export const evolve = (state: Room | null, event: RoomEvent): Room => {
       return newRoom;
     }
     case "PlayerJoined": {
-      const { playerId, playerName } = event.payload as PlayerJoinedPayload;
+      const { playerId, playerName } = event.payload;
       if (!state) {
         throw new Error("Cannot join a non-existent room");
       }

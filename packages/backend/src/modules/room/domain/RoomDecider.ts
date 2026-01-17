@@ -17,7 +17,7 @@ export const decideCreateRoom = (
     return err({ type: "DomainError", message: "Player name is required" });
   }
 
-  const event: RoomCreated = createEvent(
+  const event = createEvent(
     "RoomCreated",
     {
       roomId,
@@ -25,7 +25,7 @@ export const decideCreateRoom = (
       hostName: playerName,
     },
     1,
-  );
+  ) as RoomCreated;
 
   return ok([event]);
 };
@@ -51,7 +51,7 @@ export const decideJoinRoom = (
     return err({ type: "DomainError", message: "Player name is required" });
   }
 
-  const event: PlayerJoined = createEvent(
+  const event = createEvent(
     "PlayerJoined",
     {
       roomId: room.id,
@@ -59,7 +59,7 @@ export const decideJoinRoom = (
       playerName,
     },
     currentVersion + 1,
-  );
+  ) as PlayerJoined;
 
   return ok([event]);
 };
@@ -90,14 +90,14 @@ export const decideStartGame = (
     });
   }
 
-  const event: GameStarted = createEvent(
+  const event = createEvent(
     "GameStarted",
     {
       roomId: room.id,
       playerId,
     },
     currentVersion + 1,
-  );
+  ) as GameStarted;
 
   return ok([event]);
 };

@@ -1,6 +1,22 @@
 import type { DomainEvent } from "../../../shared/event/DomainEvent";
 import type { PlayerId, RoomId } from "./Room";
 
+// --- Event Types Constants ---
+
+export type RoomEventType =
+  | "RoomCreated"
+  | "PlayerJoined"
+  | "GameStarted"
+  | "ThemeInputted"
+  | "MeaningInputted"
+  | "VoteSubmitted"
+  | "ScoreUpdated"
+  | "AllChildrenMissed"
+  | "NextRoundStarted"
+  | "GameEnded";
+
+// --- Payloads ---
+
 export type RoomCreatedPayload = {
   readonly roomId: RoomId;
   readonly hostId: PlayerId;
@@ -63,16 +79,36 @@ export type GameEndedPayload = {
   readonly roomId: RoomId;
 };
 
-export type RoomCreated = DomainEvent<RoomCreatedPayload>;
-export type PlayerJoined = DomainEvent<PlayerJoinedPayload>;
-export type GameStarted = DomainEvent<GameStartedPayload>;
-export type ThemeInputted = DomainEvent<ThemeInputtedPayload>;
-export type MeaningInputted = DomainEvent<MeaningInputtedPayload>;
-export type VoteSubmitted = DomainEvent<VoteSubmittedPayload>;
-export type ScoreUpdated = DomainEvent<ScoreUpdatedPayload>;
-export type AllChildrenMissed = DomainEvent<AllChildrenMissedPayload>;
-export type NextRoundStarted = DomainEvent<NextRoundStartedPayload>;
-export type GameEnded = DomainEvent<GameEndedPayload>;
+// --- Events ---
+
+export type RoomCreated = DomainEvent<RoomCreatedPayload> & {
+  type: "RoomCreated";
+};
+export type PlayerJoined = DomainEvent<PlayerJoinedPayload> & {
+  type: "PlayerJoined";
+};
+export type GameStarted = DomainEvent<GameStartedPayload> & {
+  type: "GameStarted";
+};
+export type ThemeInputted = DomainEvent<ThemeInputtedPayload> & {
+  type: "ThemeInputted";
+};
+export type MeaningInputted = DomainEvent<MeaningInputtedPayload> & {
+  type: "MeaningInputted";
+};
+export type VoteSubmitted = DomainEvent<VoteSubmittedPayload> & {
+  type: "VoteSubmitted";
+};
+export type ScoreUpdated = DomainEvent<ScoreUpdatedPayload> & {
+  type: "ScoreUpdated";
+};
+export type AllChildrenMissed = DomainEvent<AllChildrenMissedPayload> & {
+  type: "AllChildrenMissed";
+};
+export type NextRoundStarted = DomainEvent<NextRoundStartedPayload> & {
+  type: "NextRoundStarted";
+};
+export type GameEnded = DomainEvent<GameEndedPayload> & { type: "GameEnded" };
 
 export type RoomEvent =
   | RoomCreated
