@@ -5,7 +5,9 @@
   "scripts": {
     "dev:backend": "pnpm --filter backend dev",
     "dev:frontend": "pnpm --filter frontend dev",
+    "test:backend": "pnpm --filter backend test",
     "build": "pnpm -r build",
+    "test": "pnpm -r test",
     "lint": "biome check .",
     "format": "biome format --write ."
   },
