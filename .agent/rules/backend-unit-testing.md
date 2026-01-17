@@ -9,11 +9,11 @@ This document outlines the unit testing guidelines for backend workspace.
 
 ## 1. Test Framework
 - **Vitest**: Used as the test runner.
-- **Run command**: \`pnpm test\` (in \`packages/backend\`).
+- **Run command**: `pnpm test:backend` (in project root)。
 
 ## 2. File Location & Naming
 - **Co-location**: Test files must be placed alongside the implementation files.
-- **Naming**: \`[filename].test.ts\` (e.g., \`Room.ts\` -> \`Room.test.ts\`).
+- **Naming**: `[filename].test.ts` (e.g., `Room.ts` -> `Room.test.ts`).
 
 ## 3. Test Case Naming Convention
 - **Language**: **Japanese**.

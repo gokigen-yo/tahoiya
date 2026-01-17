@@ -1,11 +1,11 @@
 ---
-trigger: model_decision
-description: Backend e2e test rule
+name: backend-integration-testing
+description: Procedures and commands for doing integration test on the backend WebSocket APIs.
 ---
 
-# Backend Testing Rules
+# Backend Integration Testing Skill
 
-This document outlines the testing procedures for the `packages/backend` workspace.
+This skill provides instructions and commands for doing integration test on the `packages/backend` workspace.
 
 ## Prerequisites
 - Ensure the backend server is running in a separate terminal:

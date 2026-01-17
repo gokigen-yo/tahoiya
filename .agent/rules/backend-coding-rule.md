@@ -34,10 +34,11 @@ packages/backend/src/
 - **Decider (Command -> Events)**:
   - Logic MUST be pure functions.
   - \`decideAction(params): Result<Event[], DomainError>\`
-  - Does NOT mutate state directly. Returns events that *will* change state.
+  - Do NOT mutate state directly. Returns events that *will* change state.
 - **Evolver (State + Event -> State)**:
   - \`evolve(currentState, event): NewState\`
   - Used to rebuild state from history and to calculate the new state after a command.
+  - Do NOT validate state and parameter.
 - **Event Store**:
   - Events are persisted using \`EventStore\`.
   - **Concurrency Control**: Must use \`expectedEventCount\` when saving to ensure the stream hasn't changed.
