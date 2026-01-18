@@ -45,3 +45,11 @@ FrontendとBackendで実行環境が異なるため、個別に設定します�
 
 - フレームワークは Express + Socket.IO を使用します。
 - デフォルトポートは 3001 を使用します (Frontendは 3000)。
+
+## アプリケーション実行コマンド
+
+- `pnpm test:backend`: バックエンドの単体テスト実行
+- `pnpm test`: リポジトリ全体の単体テスト実行
+- `pnpm build`: アプリケーションのビルド
+- `pnpm dev:frontend`: フロントエンドのアプリケーションのローカル起動
+- `pnpm dev:backend`: バックエンドのアプリケーションのローカル起動
