@@ -10,7 +10,8 @@ export type RoomEventType =
   | "ThemeInputted"
   | "MeaningListUpdated"
   | "VotingStarted"
-  | "VoteSubmitted"
+  | "VoteListUpdated"
+  | "RoundResultAnnounced"
   | "ScoreUpdated"
   | "AllChildrenMissed"
   | "NextRoundStarted"
@@ -58,12 +59,17 @@ export type VotingStartedPayload = {
   }[];
 };
 
-export type VoteSubmittedPayload = {
+export type VoteListUpdatedPayload = {
   readonly roomId: RoomId;
-  readonly playerId: PlayerId;
-  readonly theme: string;
-  readonly choiceIndex: number;
-  readonly betPoints: number;
+  readonly votes: {
+    readonly playerId: PlayerId;
+    readonly choiceIndex: number;
+    readonly betPoints: number;
+  }[];
+};
+
+export type RoundResultAnnouncedPayload = {
+  readonly roomId: RoomId;
 };
 
 export type ScoreUpdatedPayload = {
@@ -110,8 +116,11 @@ export type MeaningListUpdated = DomainEvent<MeaningListUpdatedPayload> & {
 export type VotingStarted = DomainEvent<VotingStartedPayload> & {
   type: "VotingStarted";
 };
-export type VoteSubmitted = DomainEvent<VoteSubmittedPayload> & {
-  type: "VoteSubmitted";
+export type VoteListUpdated = DomainEvent<VoteListUpdatedPayload> & {
+  type: "VoteListUpdated";
+};
+export type RoundResultAnnounced = DomainEvent<RoundResultAnnouncedPayload> & {
+  type: "RoundResultAnnounced";
 };
 export type ScoreUpdated = DomainEvent<ScoreUpdatedPayload> & {
   type: "ScoreUpdated";
@@ -131,7 +140,8 @@ export type RoomEvent =
   | ThemeInputted
   | MeaningListUpdated
   | VotingStarted
-  | VoteSubmitted
+  | VoteListUpdated
+  | RoundResultAnnounced
   | ScoreUpdated
   | AllChildrenMissed
   | NextRoundStarted
