@@ -1,8 +1,10 @@
 import {
   INITIAL_PLAYER_SCORE,
+  type MeaningInputRoom,
   type Player,
   type Room,
   type ThemeInputRoom,
+  type VotingRoom,
   type WaitingForJoinRoom,
 } from "./Room";
 import type { RoomEvent } from "./RoomEvents";
@@ -58,6 +60,63 @@ export const evolve = (state: Room | null, event: RoomEvent): Room => {
       };
 
       return newRoom;
+    }
+
+    case "ThemeInputted": {
+      const { theme } = event.payload;
+      if (!state) {
+        throw new Error("Cannot input theme for non-existent room");
+      }
+
+      return {
+        ...state,
+        phase: "meaning_input",
+        theme,
+        meanings: [],
+      } as MeaningInputRoom;
+    }
+
+    case "MeaningInputted": {
+      const { meaning, playerId } = event.payload;
+      if (!state) {
+        throw new Error("Cannot input meaning for non-existent room");
+      }
+
+      if (state.phase !== "meaning_input") {
+        throw new Error("Meaning can only be inputted in meaning_input phase");
+      }
+
+      const newMeanings = [...state.meanings, { playerId, text: meaning }];
+
+      if (newMeanings.length === state.players.length) {
+        // Transition to VotingRoom
+        // Note: Shuffling and choiceIndex assignment should happen here or be handled by the specialized view model.
+        // For Domain entity state, we might need to assign arbitrary indices or just hold them.
+        // The VotingRoom type definition requires 'choiceIndex'.
+        // We will assign provisional indices here (e.g. shuffle order).
+        // Since we can't easily shuffle deterministically without an external seed or service in a pure function,
+        // we might just list them. Ideally, shuffling should be part of the "Next Phase" transition logic or random seed should be passed.
+        // For now, we simply map them to indices in order of submission (or ID order).
+        // Real shuffling might be better done in the Application Service or by passing a seed in the command/event.
+        // Let's assume for now 0..N indices.
+
+        const meaningsWithIndex = newMeanings.map((m, index) => ({
+          ...m,
+          choiceIndex: index, // TODO: Shuffle these!
+        }));
+
+        return {
+          ...state,
+          phase: "voting",
+          meanings: meaningsWithIndex,
+          votes: [],
+        } as VotingRoom;
+      }
+
+      return {
+        ...state,
+        meanings: newMeanings,
+      } as MeaningInputRoom;
     }
     default:
       return state as Room; // Should not happen if types are correct
