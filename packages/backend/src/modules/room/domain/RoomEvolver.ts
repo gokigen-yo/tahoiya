@@ -76,19 +76,19 @@ export const evolve = (state: Room | null, event: RoomEvent): Room => {
       } as MeaningInputRoom;
     }
 
-    case "MeaningInputted": {
-      const { meaning, playerId } = event.payload;
+    case "MeaningListUpdated": {
+      const { meanings } = event.payload;
       if (!state) {
         throw new Error("Cannot input meaning for non-existent room");
       }
 
-      if (state.phase !== "meaning_input") {
-        throw new Error("Meaning can only be inputted in meaning_input phase");
-      }
+      // Check if all players have submitted meanings (including parent?)
+      // Rules say:
+      // Child: inputs fake meaning
+      // Parent: inputs real meaning (or edits it)
+      // So ALL players must input meaning.
 
-      const newMeanings = [...state.meanings, { playerId, text: meaning }];
-
-      if (newMeanings.length === state.players.length) {
+      if (meanings.length === state.players.length) {
         // Transition to VotingRoom
         // Note: Shuffling and choiceIndex assignment should happen here or be handled by the specialized view model.
         // For Domain entity state, we might need to assign arbitrary indices or just hold them.
@@ -100,7 +100,7 @@ export const evolve = (state: Room | null, event: RoomEvent): Room => {
         // Real shuffling might be better done in the Application Service or by passing a seed in the command/event.
         // Let's assume for now 0..N indices.
 
-        const meaningsWithIndex = newMeanings.map((m, index) => ({
+        const meaningsWithIndex = meanings.map((m, index) => ({
           ...m,
           choiceIndex: index, // TODO: Shuffle these!
         }));
@@ -115,7 +115,7 @@ export const evolve = (state: Room | null, event: RoomEvent): Room => {
 
       return {
         ...state,
-        meanings: newMeanings,
+        meanings: meanings,
       } as MeaningInputRoom;
     }
     default:

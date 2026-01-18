@@ -9,7 +9,7 @@ import {
 } from "./RoomDecider";
 import type {
   GameStarted,
-  MeaningInputted,
+  MeaningListUpdated,
   PlayerJoined,
   RoomCreated,
   ThemeInputted,
@@ -328,12 +328,12 @@ describe("decideInputMeaning", () => {
     expect(result.success).toBe(true);
     const successResult = result as Extract<typeof result, { success: true }>;
     expect(successResult.value).toHaveLength(1);
-    const event = successResult.value[0] as MeaningInputted;
-    expect(event.type).toBe("MeaningInputted");
+    const event = successResult.value[0] as MeaningListUpdated;
+    expect(event.type).toBe("MeaningListUpdated");
     expect(event.payload.roomId).toBe(room.id);
-    expect(event.payload.playerId).toBe(hostId);
-    expect(event.payload.theme).toBe("お題");
-    expect(event.payload.meaning).toBe(meaning);
+    expect(event.payload.meanings).toHaveLength(1);
+    expect(event.payload.meanings[0].playerId).toBe(hostId);
+    expect(event.payload.meanings[0].text).toBe(meaning);
   });
 
   it("すでに意味を入力済みの場合はエラー", () => {

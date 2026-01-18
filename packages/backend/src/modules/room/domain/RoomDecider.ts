@@ -3,7 +3,7 @@ import { err, ok, type Result } from "../../../shared/types";
 import type { PlayerId, Room, RoomId } from "./Room";
 import type {
   GameStarted,
-  MeaningInputted,
+  MeaningListUpdated,
   PlayerJoined,
   RoomCreated,
   RoomEvent,
@@ -186,15 +186,13 @@ export const decideInputMeaning = (
   }
 
   const event = createEvent(
-    "MeaningInputted",
+    "MeaningListUpdated",
     {
       roomId: room.id,
-      playerId,
-      theme: room.theme,
-      meaning,
+      meanings: [...room.meanings, { playerId, text: meaning }],
     },
     currentVersion + 1,
-  ) as MeaningInputted;
+  ) as MeaningListUpdated;
 
   return ok([event]);
 };

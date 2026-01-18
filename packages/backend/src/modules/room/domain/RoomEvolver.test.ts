@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { MeaningInputRoom, ThemeInputRoom, WaitingForJoinRoom } from "./Room";
 import type {
   GameStarted,
-  MeaningInputted,
+  MeaningListUpdated,
   PlayerJoined,
   RoomCreated,
   ThemeInputted,
@@ -143,7 +143,7 @@ describe("evolve", () => {
     expect(meaningInputRoom.meanings).toEqual([]);
   });
 
-  it("MeaningInputtedイベントで意味が追加される", () => {
+  it("MeaningListUpdatedイベントで意味が追加される", () => {
     // Arrange
     const roomId = "room-1";
     const hostId = "host";
@@ -162,13 +162,11 @@ describe("evolve", () => {
       meanings: [],
     };
 
-    const event: MeaningInputted = {
-      type: "MeaningInputted",
+    const event: MeaningListUpdated = {
+      type: "MeaningListUpdated",
       payload: {
         roomId,
-        playerId,
-        theme: "お題",
-        meaning: "意味",
+        meanings: [{ playerId, text: "意味" }],
       },
       occurredAt: new Date(),
       version: 4,
