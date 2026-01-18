@@ -8,7 +8,24 @@ import type {
   RoomCreated,
   RoomEvent,
   ThemeInputted,
+  VotingStarted,
 } from "./RoomEvents";
+
+const seededShuffle = <T>(array: T[], seed: number): T[] => {
+  let currentSeed = seed;
+
+  const nextRandom = () => {
+    currentSeed = (currentSeed * 1664525 + 1013904223) >>> 0;
+    return currentSeed / 4294967296;
+  };
+
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(nextRandom() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
 
 export type DomainError = {
   readonly type: "DomainError";
@@ -154,6 +171,7 @@ export const decideInputMeaning = (
   playerId: PlayerId,
   meaning: string,
   currentVersion: number,
+  randomSeed: number,
 ): Result<RoomEvent[], DomainError> => {
   if (room.phase !== "meaning_input") {
     return err({
@@ -185,14 +203,35 @@ export const decideInputMeaning = (
     });
   }
 
-  const event = createEvent(
+  const newMeanings = [...room.meanings, { playerId, text: meaning }];
+
+  const meaningListUpdatedEvent = createEvent(
     "MeaningListUpdated",
     {
       roomId: room.id,
-      meanings: [...room.meanings, { playerId, text: meaning }],
+      meanings: newMeanings,
     },
     currentVersion + 1,
   ) as MeaningListUpdated;
 
-  return ok([event]);
+  if (newMeanings.length !== room.players.length) {
+    return ok([meaningListUpdatedEvent]);
+  }
+
+  const shuffledMeanings = seededShuffle(newMeanings, randomSeed);
+  const meaningsWithIndex = shuffledMeanings.map((m, index) => ({
+    ...m,
+    choiceIndex: index,
+  }));
+
+  const votingStartedEvent = createEvent(
+    "VotingStarted",
+    {
+      roomId: room.id,
+      meanings: meaningsWithIndex,
+    },
+    currentVersion + 2, // Incremented version for the second event
+  ) as VotingStarted;
+
+  return ok([meaningListUpdatedEvent, votingStartedEvent]);
 };

@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
-import type { MeaningInputRoom, ThemeInputRoom, WaitingForJoinRoom } from "./Room";
+import type { MeaningInputRoom, ThemeInputRoom, VotingRoom, WaitingForJoinRoom } from "./Room";
 import type {
   GameStarted,
   MeaningListUpdated,
   PlayerJoined,
   RoomCreated,
   ThemeInputted,
+  VotingStarted,
 } from "./RoomEvents";
 import { evolve } from "./RoomEvolver";
 
@@ -180,5 +181,51 @@ describe("evolve", () => {
     expect(meaningInputRoom.meanings).toHaveLength(1);
     expect(meaningInputRoom.meanings[0].playerId).toBe(playerId);
     expect(meaningInputRoom.meanings[0].text).toBe("意味");
+  });
+
+  it("VotingStartedイベントで投票フェーズに遷移する", () => {
+    // Arrange
+    const roomId = "room-1";
+    const hostId = "host";
+    const initialState: MeaningInputRoom = {
+      id: roomId,
+      phase: "meaning_input",
+      hostId,
+      players: [
+        { id: hostId, name: "Host", score: 10 },
+        { id: "p2", name: "P2", score: 10 },
+      ],
+      round: 1,
+      parentPlayerId: hostId,
+      theme: "お題",
+      meanings: [
+        { playerId: hostId, text: "意味1" },
+        { playerId: "p2", text: "意味2" },
+      ],
+    };
+
+    const event: VotingStarted = {
+      type: "VotingStarted",
+      payload: {
+        roomId,
+        meanings: [
+          { playerId: hostId, text: "意味1", choiceIndex: 0 },
+          { playerId: "p2", text: "意味2", choiceIndex: 1 },
+        ],
+      },
+      occurredAt: new Date(),
+      version: 5,
+    };
+
+    // Act
+    const newState = evolve(initialState, event);
+
+    // Assert
+    expect(newState.phase).toBe("voting");
+    const votingRoom = newState as VotingRoom;
+    expect(votingRoom.meanings).toHaveLength(2);
+    expect(votingRoom.meanings[0].choiceIndex).toBe(0);
+    expect(votingRoom.meanings[1].choiceIndex).toBe(1);
+    expect(votingRoom.votes).toEqual([]);
   });
 });

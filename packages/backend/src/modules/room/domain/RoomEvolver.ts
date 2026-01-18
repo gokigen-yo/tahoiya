@@ -82,41 +82,24 @@ export const evolve = (state: Room | null, event: RoomEvent): Room => {
         throw new Error("Cannot input meaning for non-existent room");
       }
 
-      // Check if all players have submitted meanings (including parent?)
-      // Rules say:
-      // Child: inputs fake meaning
-      // Parent: inputs real meaning (or edits it)
-      // So ALL players must input meaning.
-
-      if (meanings.length === state.players.length) {
-        // Transition to VotingRoom
-        // Note: Shuffling and choiceIndex assignment should happen here or be handled by the specialized view model.
-        // For Domain entity state, we might need to assign arbitrary indices or just hold them.
-        // The VotingRoom type definition requires 'choiceIndex'.
-        // We will assign provisional indices here (e.g. shuffle order).
-        // Since we can't easily shuffle deterministically without an external seed or service in a pure function,
-        // we might just list them. Ideally, shuffling should be part of the "Next Phase" transition logic or random seed should be passed.
-        // For now, we simply map them to indices in order of submission (or ID order).
-        // Real shuffling might be better done in the Application Service or by passing a seed in the command/event.
-        // Let's assume for now 0..N indices.
-
-        const meaningsWithIndex = meanings.map((m, index) => ({
-          ...m,
-          choiceIndex: index, // TODO: Shuffle these!
-        }));
-
-        return {
-          ...state,
-          phase: "voting",
-          meanings: meaningsWithIndex,
-          votes: [],
-        } as VotingRoom;
-      }
-
       return {
         ...state,
         meanings: meanings,
       } as MeaningInputRoom;
+    }
+
+    case "VotingStarted": {
+      const { meanings } = event.payload;
+      if (!state) {
+        throw new Error("Cannot start voting for non-existent room");
+      }
+
+      return {
+        ...state,
+        phase: "voting",
+        meanings: meanings,
+        votes: [],
+      } as VotingRoom;
     }
     default:
       return state as Room; // Should not happen if types are correct

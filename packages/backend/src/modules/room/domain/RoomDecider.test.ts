@@ -13,6 +13,7 @@ import type {
   PlayerJoined,
   RoomCreated,
   ThemeInputted,
+  VotingStarted,
 } from "./RoomEvents";
 
 describe("decideCreateRoom", () => {
@@ -303,9 +304,10 @@ describe("decideInputTheme", () => {
 });
 
 describe("decideInputMeaning", () => {
-  it("プレイヤーが意味を入力できる", () => {
+  it("全員の意味が揃うまではMeaningListUpdatedのみ発行される", () => {
     // Arrange
     const hostId = "host";
+    const inputtingPlayerId = "p2";
     const room: MeaningInputRoom = {
       id: "room-1",
       phase: "meaning_input",
@@ -313,27 +315,89 @@ describe("decideInputMeaning", () => {
       players: [
         { id: hostId, name: "Host", score: 10 },
         { id: "p2", name: "P2", score: 10 },
+        { id: "p3", name: "P3", score: 10 },
       ],
       round: 1,
       parentPlayerId: hostId,
       theme: "お題",
-      meanings: [],
+      meanings: [], // No meanings yet
     };
 
     // Act
-    const meaning = "意味";
-    const result = decideInputMeaning(room, hostId, meaning, 1);
+    const newMeaning = "新しい意味";
+    const result = decideInputMeaning(room, inputtingPlayerId, newMeaning, 1, 1);
 
     // Assert
     expect(result.success).toBe(true);
     const successResult = result as Extract<typeof result, { success: true }>;
+
+    // Check for only 1 event: MeaningListUpdated
     expect(successResult.value).toHaveLength(1);
-    const event = successResult.value[0] as MeaningListUpdated;
-    expect(event.type).toBe("MeaningListUpdated");
-    expect(event.payload.roomId).toBe(room.id);
-    expect(event.payload.meanings).toHaveLength(1);
-    expect(event.payload.meanings[0].playerId).toBe(hostId);
-    expect(event.payload.meanings[0].text).toBe(meaning);
+
+    const meaningListUpdated = successResult.value[0] as MeaningListUpdated;
+    expect(meaningListUpdated.type).toBe("MeaningListUpdated");
+    expect(meaningListUpdated.payload.roomId).toBe(room.id);
+    expect(meaningListUpdated.payload.meanings).toHaveLength(1);
+    expect(meaningListUpdated.payload.meanings).toEqual([
+      { playerId: inputtingPlayerId, text: newMeaning },
+    ]);
+  });
+
+  it("全員の意味が揃うとMeaningListUpdatedとVotingStartedが発行される", () => {
+    // Arrange
+    const hostId = "host";
+    const inputtingPlayerId = "p3";
+    const existingMeaning1 = { playerId: "p2", text: "既存の意味" };
+    const existingMeaning2 = { playerId: hostId, text: "ホストの意味" };
+    const room: MeaningInputRoom = {
+      id: "room-1",
+      phase: "meaning_input",
+      hostId,
+      players: [
+        { id: hostId, name: "Host", score: 10 },
+        { id: "p2", name: "P2", score: 10 },
+        { id: inputtingPlayerId, name: "P3", score: 10 },
+      ],
+      round: 1,
+      parentPlayerId: hostId,
+      theme: "お題",
+      meanings: [existingMeaning1, existingMeaning2],
+    };
+
+    // Act
+    const newMeaning = "新しい意味";
+    // Using a fixed seed "1"
+    const result = decideInputMeaning(room, inputtingPlayerId, newMeaning, 1, 1);
+
+    // Assert
+    expect(result.success).toBe(true);
+    const successResult = result as Extract<typeof result, { success: true }>;
+    expect(successResult.value).toHaveLength(2);
+
+    const meaningListUpdated = successResult.value[0] as MeaningListUpdated;
+    expect(meaningListUpdated.type).toBe("MeaningListUpdated");
+    expect(meaningListUpdated.payload.roomId).toBe(room.id);
+    expect(meaningListUpdated.payload.meanings).toEqual([
+      existingMeaning1,
+      existingMeaning2,
+      { playerId: inputtingPlayerId, text: newMeaning },
+    ]);
+
+    const votingStarted = successResult.value[1] as VotingStarted;
+    expect(votingStarted.type).toBe("VotingStarted");
+    expect(votingStarted.payload.roomId).toBe(room.id);
+
+    // Check elements are present (indices will be assigned by shuffle)
+    expect(votingStarted.payload.meanings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ playerId: "p2", text: "既存の意味" }),
+        expect.objectContaining({ playerId: hostId, text: "ホストの意味" }),
+        expect.objectContaining({ playerId: inputtingPlayerId, text: newMeaning }),
+      ]),
+    );
+    // Check choiceIndices are 0, 1, 2
+    const indices = votingStarted.payload.meanings.map((m) => m.choiceIndex).sort();
+    expect(indices).toEqual([0, 1, 2]);
   });
 
   it("すでに意味を入力済みの場合はエラー", () => {
@@ -354,7 +418,7 @@ describe("decideInputMeaning", () => {
     };
 
     // Act
-    const result = decideInputMeaning(room, hostId, "新しい意味", 1);
+    const result = decideInputMeaning(room, hostId, "新しい意味", 1, 1);
 
     // Assert
     expect(result.success).toBe(false);
@@ -375,7 +439,7 @@ describe("decideInputMeaning", () => {
     };
 
     // Act
-    const result = decideInputMeaning(room, "unknown", "意味", 1);
+    const result = decideInputMeaning(room, "unknown", "意味", 1, 1);
 
     // Assert
     expect(result.success).toBe(false);
@@ -396,7 +460,7 @@ describe("decideInputMeaning", () => {
     };
 
     // Act
-    const result = decideInputMeaning(room, hostId, "", 1);
+    const result = decideInputMeaning(room, hostId, "", 1, 1);
 
     // Assert
     expect(result.success).toBe(false);
@@ -413,7 +477,7 @@ describe("decideInputMeaning", () => {
     } as unknown as MeaningInputRoom;
 
     // Act
-    const result = decideInputMeaning(room, hostId, "意味", 1);
+    const result = decideInputMeaning(room, hostId, "意味", 1, 1);
 
     // Assert
     expect(result.success).toBe(false);

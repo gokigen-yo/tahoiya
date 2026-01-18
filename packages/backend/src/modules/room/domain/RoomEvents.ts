@@ -9,6 +9,7 @@ export type RoomEventType =
   | "GameStarted"
   | "ThemeInputted"
   | "MeaningListUpdated"
+  | "VotingStarted"
   | "VoteSubmitted"
   | "ScoreUpdated"
   | "AllChildrenMissed"
@@ -45,6 +46,15 @@ export type MeaningListUpdatedPayload = {
   readonly meanings: {
     readonly playerId: PlayerId;
     readonly text: string;
+  }[];
+};
+
+export type VotingStartedPayload = {
+  readonly roomId: RoomId;
+  readonly meanings: {
+    readonly playerId: PlayerId;
+    readonly text: string;
+    readonly choiceIndex: number;
   }[];
 };
 
@@ -97,6 +107,9 @@ export type ThemeInputted = DomainEvent<ThemeInputtedPayload> & {
 export type MeaningListUpdated = DomainEvent<MeaningListUpdatedPayload> & {
   type: "MeaningListUpdated";
 };
+export type VotingStarted = DomainEvent<VotingStartedPayload> & {
+  type: "VotingStarted";
+};
 export type VoteSubmitted = DomainEvent<VoteSubmittedPayload> & {
   type: "VoteSubmitted";
 };
@@ -117,6 +130,7 @@ export type RoomEvent =
   | GameStarted
   | ThemeInputted
   | MeaningListUpdated
+  | VotingStarted
   | VoteSubmitted
   | ScoreUpdated
   | AllChildrenMissed
