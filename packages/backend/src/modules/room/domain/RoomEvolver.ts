@@ -1,8 +1,10 @@
 import {
   INITIAL_PLAYER_SCORE,
+  type MeaningInputRoom,
   type Player,
   type Room,
   type ThemeInputRoom,
+  type VotingRoom,
   type WaitingForJoinRoom,
 } from "./Room";
 import type { RoomEvent } from "./RoomEvents";
@@ -58,6 +60,46 @@ export const evolve = (state: Room | null, event: RoomEvent): Room => {
       };
 
       return newRoom;
+    }
+
+    case "ThemeInputted": {
+      const { theme } = event.payload;
+      if (!state) {
+        throw new Error("Cannot input theme for non-existent room");
+      }
+
+      return {
+        ...state,
+        phase: "meaning_input",
+        theme,
+        meanings: [],
+      } as MeaningInputRoom;
+    }
+
+    case "MeaningListUpdated": {
+      const { meanings } = event.payload;
+      if (!state) {
+        throw new Error("Cannot input meaning for non-existent room");
+      }
+
+      return {
+        ...state,
+        meanings: meanings,
+      } as MeaningInputRoom;
+    }
+
+    case "VotingStarted": {
+      const { meanings } = event.payload;
+      if (!state) {
+        throw new Error("Cannot start voting for non-existent room");
+      }
+
+      return {
+        ...state,
+        phase: "voting",
+        meanings: meanings,
+        votes: [],
+      } as VotingRoom;
     }
     default:
       return state as Room; // Should not happen if types are correct
