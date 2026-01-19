@@ -2,12 +2,16 @@ import { createEvent } from "../../../shared/event/DomainEvent";
 import { err, ok, type Result } from "../../../shared/types";
 import type { PlayerId, Room, RoomId } from "./Room";
 import type {
+  AllChildrenMissed,
   GameStarted,
   MeaningListUpdated,
   PlayerJoined,
   RoomCreated,
   RoomEvent,
+  RoundResultAnnounced,
+  ScoreUpdated,
   ThemeInputted,
+  VoteListUpdated,
   VotingStarted,
 } from "./RoomEvents";
 
@@ -234,4 +238,134 @@ export const decideInputMeaning = (
   ) as VotingStarted;
 
   return ok([meaningListUpdatedEvent, votingStartedEvent]);
+};
+export const decideVote = (
+  room: Room,
+  playerId: PlayerId,
+  choiceIndex: number,
+  betPoints: number,
+  currentVersion: number,
+): Result<RoomEvent[], DomainError> => {
+  if (room.phase !== "voting") {
+    return err({
+      type: "DomainError",
+      message: "Room is not in voting phase",
+    });
+  }
+
+  if (room.parentPlayerId === playerId) {
+    return err({
+      type: "DomainError",
+      message: "Parent player cannot vote",
+    });
+  }
+
+  const player = room.players.find((p) => p.id === playerId);
+  if (!player) {
+    return err({
+      type: "DomainError",
+      message: "Player is not in the room",
+    });
+  }
+
+  const hasAlreadyVoted = room.votes.some((v) => v.playerId === playerId);
+  if (hasAlreadyVoted) {
+    return err({
+      type: "DomainError",
+      message: "Player has already voted",
+    });
+  }
+
+  const choiceMeaning = room.meanings.find((m) => m.choiceIndex === choiceIndex);
+  if (!choiceMeaning) {
+    return err({
+      type: "DomainError",
+      message: "Invalid choice index",
+    });
+  }
+
+  if (choiceMeaning.playerId === playerId) {
+    return err({
+      type: "DomainError",
+      message: "Cannot vote for your own meaning",
+    });
+  }
+
+  if (betPoints < 1 || betPoints > 3) {
+    return err({
+      type: "DomainError",
+      message: "Bet points must be between 1 and 3",
+    });
+  }
+
+  const newVotes = [...room.votes, { playerId, choiceIndex, betPoints }];
+
+  const voteListUpdatedEvent = createEvent(
+    "VoteListUpdated",
+    {
+      roomId: room.id,
+      votes: newVotes,
+    },
+    currentVersion + 1,
+  ) as VoteListUpdated;
+
+  const children = room.players.filter((p) => p.id !== room.parentPlayerId);
+  if (newVotes.length !== children.length) {
+    return ok([voteListUpdatedEvent]);
+  }
+
+  const events: RoomEvent[] = [voteListUpdatedEvent];
+  let version = currentVersion + 2;
+
+  events.push(
+    createEvent("RoundResultAnnounced", { roomId: room.id }, version++) as RoundResultAnnounced,
+  );
+
+  let correctGuessersCount = 0;
+
+  for (const vote of newVotes) {
+    const meaning = room.meanings.find((m) => m.choiceIndex === vote.choiceIndex);
+    if (!meaning) {
+      return err({
+        type: "DomainError",
+        message: `Meaning not found for choice index: ${vote.choiceIndex}`,
+      });
+    }
+    const isCorrect = meaning.playerId === room.parentPlayerId;
+
+    if (isCorrect) {
+      correctGuessersCount++;
+    }
+
+    events.push(
+      createEvent(
+        "ScoreUpdated",
+        {
+          roomId: room.id,
+          playerId: vote.playerId,
+          betPoints: vote.betPoints,
+          meaningSubmittedPlayerId: meaning.playerId,
+          isChoosingCorrectMeaning: isCorrect,
+          parentPlayerId: room.parentPlayerId,
+        },
+        version++,
+      ) as ScoreUpdated,
+    );
+  }
+
+  if (correctGuessersCount === 0) {
+    events.push(
+      createEvent(
+        "AllChildrenMissed",
+        {
+          roomId: room.id,
+          parentPlayerId: room.parentPlayerId,
+          gainedPoints: 1,
+        },
+        version++,
+      ) as AllChildrenMissed,
+    );
+  }
+
+  return ok(events);
 };

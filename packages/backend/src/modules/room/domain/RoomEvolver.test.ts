@@ -1,11 +1,21 @@
 import { describe, expect, it } from "vitest";
-import type { MeaningInputRoom, ThemeInputRoom, VotingRoom, WaitingForJoinRoom } from "./Room";
 import type {
+  MeaningInputRoom,
+  RoundResultRoom,
+  ThemeInputRoom,
+  VotingRoom,
+  WaitingForJoinRoom,
+} from "./Room";
+import type {
+  AllChildrenMissed,
   GameStarted,
   MeaningListUpdated,
   PlayerJoined,
   RoomCreated,
+  RoundResultAnnounced,
+  ScoreUpdated,
   ThemeInputted,
+  VoteListUpdated,
   VotingStarted,
 } from "./RoomEvents";
 import { evolve } from "./RoomEvolver";
@@ -227,5 +237,196 @@ describe("evolve", () => {
     expect(votingRoom.meanings[0].choiceIndex).toBe(0);
     expect(votingRoom.meanings[1].choiceIndex).toBe(1);
     expect(votingRoom.votes).toEqual([]);
+  });
+
+  it("VoteListUpdatedで投票リストが更新される", () => {
+    // Arrange
+    const hostId = "host";
+    const initialState: VotingRoom = {
+      id: "room-1",
+      phase: "voting",
+      hostId,
+      players: [
+        { id: hostId, name: "Host", score: 10 },
+        { id: "p2", name: "P2", score: 10 },
+      ],
+      round: 1,
+      parentPlayerId: hostId,
+      theme: "お題",
+      meanings: [],
+      votes: [],
+    };
+
+    const votes = [{ playerId: "p2", choiceIndex: 0, betPoints: 2 }];
+    const event: VoteListUpdated = {
+      type: "VoteListUpdated",
+      payload: { roomId: "room-1", votes },
+      occurredAt: new Date(),
+      version: 6,
+    };
+
+    // Act
+    const newState = evolve(initialState, event) as VotingRoom;
+
+    // Assert
+    expect(newState.votes).toEqual(votes);
+  });
+
+  it("RoundResultAnnouncedでround_resultフェーズに遷移する", () => {
+    // Arrange
+    const initialState: VotingRoom = {
+      id: "room-1",
+      phase: "voting",
+      hostId: "host",
+      players: [],
+      round: 1,
+      parentPlayerId: "host",
+      theme: "お題",
+      meanings: [],
+      votes: [],
+    };
+
+    const event: RoundResultAnnounced = {
+      type: "RoundResultAnnounced",
+      payload: { roomId: "room-1" },
+      occurredAt: new Date(),
+      version: 7,
+    };
+
+    // Act
+    const newState = evolve(initialState, event) as RoundResultRoom;
+
+    // Assert
+    expect(newState.phase).toBe("round_result");
+  });
+
+  describe("ScoreUpdated", () => {
+    it("子が正解した場合、子に加点され親から減点される", () => {
+      // Arrange
+      const hostId = "host";
+      const playerId = "p2";
+      const initialState: RoundResultRoom = {
+        id: "room-1",
+        phase: "round_result",
+        hostId,
+        players: [
+          { id: hostId, name: "Host", score: 10 },
+          { id: playerId, name: "P2", score: 10 },
+        ],
+        round: 1,
+        parentPlayerId: hostId,
+        theme: "お題",
+        meanings: [],
+        votes: [],
+      };
+
+      const event: ScoreUpdated = {
+        type: "ScoreUpdated",
+        payload: {
+          roomId: "room-1",
+          playerId,
+          betPoints: 3,
+          isChoosingCorrectMeaning: true,
+          meaningSubmittedPlayerId: hostId,
+          parentPlayerId: hostId,
+        },
+        occurredAt: new Date(),
+        version: 8,
+      };
+
+      // Act
+      const newState = evolve(initialState, event);
+
+      // Assert
+      expect(newState.players).toContainEqual(expect.objectContaining({ id: hostId, score: 7 })); // 10 - 3
+      expect(newState.players).toContainEqual(expect.objectContaining({ id: playerId, score: 13 })); // 10 + 3
+    });
+
+    it("子が不正解の場合、子から減点され、偽の意味の作者と親に加点される", () => {
+      // Arrange
+      const hostId = "host";
+      const votingPlayerId = "p2";
+      const authorPlayerId = "p3";
+      const initialState: RoundResultRoom = {
+        id: "room-1",
+        phase: "round_result",
+        hostId,
+        players: [
+          { id: hostId, name: "Host", score: 10 },
+          { id: votingPlayerId, name: "P2", score: 10 },
+          { id: authorPlayerId, name: "P3", score: 10 },
+        ],
+        round: 1,
+        parentPlayerId: hostId,
+        theme: "お題",
+        meanings: [],
+        votes: [],
+      };
+
+      const event: ScoreUpdated = {
+        type: "ScoreUpdated",
+        payload: {
+          roomId: "room-1",
+          playerId: votingPlayerId,
+          betPoints: 2,
+          isChoosingCorrectMeaning: false,
+          meaningSubmittedPlayerId: authorPlayerId,
+          parentPlayerId: hostId,
+        },
+        occurredAt: new Date(),
+        version: 8,
+      };
+
+      // Act
+      const newState = evolve(initialState, event);
+
+      // Assert
+      expect(newState.players).toContainEqual(
+        expect.objectContaining({ id: votingPlayerId, score: 7 }),
+      ); // 10 - (2 + 1)
+      expect(newState.players).toContainEqual(
+        expect.objectContaining({ id: authorPlayerId, score: 12 }),
+      ); // 10 + 2
+      expect(newState.players).toContainEqual(expect.objectContaining({ id: hostId, score: 11 })); // 10 + 1
+    });
+  });
+
+  it("AllChildrenMissedで親にボーナスが加算される", () => {
+    // Arrange
+    const hostId = "host";
+    const initialState: RoundResultRoom = {
+      id: "room-1",
+      phase: "round_result",
+      hostId,
+      players: [
+        { id: hostId, name: "Host", score: 10 },
+        { id: "p2", name: "P2", score: 10 },
+        { id: "p3", name: "P3", score: 10 },
+      ],
+      round: 1,
+      parentPlayerId: hostId,
+      theme: "お題",
+      meanings: [],
+      votes: [],
+    };
+
+    const event: AllChildrenMissed = {
+      type: "AllChildrenMissed",
+      payload: {
+        roomId: "room-1",
+        parentPlayerId: hostId,
+        gainedPoints: 2,
+      },
+      occurredAt: new Date(),
+      version: 10,
+    };
+
+    // Act
+    const newState = evolve(initialState, event);
+
+    // Assert
+    expect(newState.players).toContainEqual(expect.objectContaining({ id: hostId, score: 14 })); // 10 + (2 * 2人)
+    expect(newState.players).toContainEqual(expect.objectContaining({ id: "p2", score: 8 })); // 10 - 2
+    expect(newState.players).toContainEqual(expect.objectContaining({ id: "p3", score: 8 })); // 10 - 2
   });
 });
