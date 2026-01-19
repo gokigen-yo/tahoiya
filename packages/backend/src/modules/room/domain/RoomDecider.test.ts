@@ -1,18 +1,22 @@
 import { describe, expect, it } from "vitest";
-import type { MeaningInputRoom, ThemeInputRoom, WaitingForJoinRoom } from "./Room";
+import type { MeaningInputRoom, ThemeInputRoom, VotingRoom, WaitingForJoinRoom } from "./Room";
 import {
   decideCreateRoom,
   decideInputMeaning,
   decideInputTheme,
   decideJoinRoom,
   decideStartGame,
+  decideVote,
 } from "./RoomDecider";
 import type {
+  AllChildrenMissed,
   GameStarted,
   MeaningListUpdated,
   PlayerJoined,
   RoomCreated,
+  ScoreUpdated,
   ThemeInputted,
+  VoteListUpdated,
   VotingStarted,
 } from "./RoomEvents";
 
@@ -481,5 +485,204 @@ describe("decideInputMeaning", () => {
 
     // Assert
     expect(result.success).toBe(false);
+  });
+});
+
+describe("decideVote", () => {
+  it("子全員が投票していない場合、VoteListUpdatedのみ発行される", () => {
+    // Arrange
+    const hostId = "host";
+    const votingPlayerId = "p2";
+    const room: VotingRoom = {
+      id: "room-1",
+      phase: "voting",
+      hostId,
+      players: [
+        { id: hostId, name: "Host", score: 10 },
+        { id: "p2", name: "P2", score: 10 },
+        { id: "p3", name: "P3", score: 10 },
+      ],
+      round: 1,
+      parentPlayerId: hostId,
+      theme: "お題",
+      meanings: [
+        { playerId: hostId, text: "本当の意味", choiceIndex: 0 },
+        { playerId: "p2", text: "P2の偽意味", choiceIndex: 1 },
+        { playerId: "p3", text: "P3の偽意味", choiceIndex: 2 },
+      ],
+      votes: [],
+    };
+
+    // Act
+    const result = decideVote(room, votingPlayerId, 0, 1, 1);
+
+    // Assert
+    expect(result.success).toBe(true);
+    const successResult = result as Extract<typeof result, { success: true }>;
+    expect(successResult.value).toHaveLength(1);
+
+    const voteListUpdated = successResult.value[0] as VoteListUpdated;
+    expect(voteListUpdated.type).toBe("VoteListUpdated");
+    expect(voteListUpdated.payload.votes).toEqual([
+      { playerId: votingPlayerId, choiceIndex: 0, betPoints: 1 },
+    ]);
+  });
+
+  it("最後の一人が投票した際、スコア計算とラウンド終了のイベントが発行される", () => {
+    // Arrange
+    const hostId = "host";
+    const lastVotingPlayerId = "p3";
+    const room: VotingRoom = {
+      id: "room-1",
+      phase: "voting",
+      hostId,
+      players: [
+        { id: hostId, name: "Host", score: 10 },
+        { id: "p2", name: "P2", score: 10 },
+        { id: lastVotingPlayerId, name: "P3", score: 10 },
+      ],
+      round: 1,
+      parentPlayerId: hostId,
+      theme: "お題",
+      meanings: [
+        { playerId: hostId, text: "本当の意味", choiceIndex: 0 },
+        { playerId: "p2", text: "P2の偽意味", choiceIndex: 1 },
+        { playerId: lastVotingPlayerId, text: "P3の偽意味", choiceIndex: 2 },
+      ],
+      votes: [
+        { playerId: "p2", choiceIndex: 0, betPoints: 2 }, // P2正解
+      ],
+    };
+
+    // Act
+    const result = decideVote(room, lastVotingPlayerId, 1, 3, 2);
+
+    // Assert
+    expect(result.success).toBe(true);
+    const events = (result as Extract<typeof result, { success: true }>).value;
+
+    // VoteListUpdated, RoundResultAnnounced, ScoreUpdated x 2 (P2, P3)
+    expect(events.length).toBeGreaterThanOrEqual(4);
+
+    expect(events[0].type).toBe("VoteListUpdated");
+    expect(events[1].type).toBe("RoundResultAnnounced");
+
+    const scoreEvents = events.filter((e) => e.type === "ScoreUpdated") as ScoreUpdated[];
+    expect(scoreEvents).toHaveLength(2);
+
+    // P2正解のスコア計算
+    const p2Score = scoreEvents.find((e) => e.payload.playerId === "p2");
+    expect(p2Score?.payload).toEqual(
+      expect.objectContaining({
+        betPoints: 2,
+        isChoosingCorrectMeaning: true,
+        meaningSubmittedPlayerId: hostId,
+      }),
+    );
+
+    const p3Score = events[3] as ScoreUpdated;
+    expect(p3Score.type).toBe("ScoreUpdated");
+    expect(p3Score.payload).toEqual(
+      expect.objectContaining({
+        playerId: lastVotingPlayerId,
+        betPoints: 3,
+        isChoosingCorrectMeaning: false,
+        meaningSubmittedPlayerId: "p2",
+      }),
+    );
+  });
+
+  it("全員不正解の場合、AllChildrenMissedが発行される", () => {
+    // Arrange
+    const hostId = "host";
+    const lastVotingPlayerId = "p3";
+    const room: VotingRoom = {
+      id: "room-1",
+      phase: "voting",
+      hostId,
+      players: [
+        { id: hostId, name: "Host", score: 10 },
+        { id: "p2", name: "P2", score: 10 },
+        { id: lastVotingPlayerId, name: "P3", score: 10 },
+      ],
+      round: 1,
+      parentPlayerId: hostId,
+      theme: "お題",
+      meanings: [
+        { playerId: hostId, text: "本当の意味", choiceIndex: 0 },
+        { playerId: "p2", text: "P2の偽意味", choiceIndex: 1 },
+        { playerId: lastVotingPlayerId, text: "P3の偽意味", choiceIndex: 2 },
+      ],
+      votes: [
+        { playerId: "p2", choiceIndex: 2, betPoints: 1 }, // P2不正解
+      ],
+    };
+
+    // Act
+    const result = decideVote(room, lastVotingPlayerId, 1, 1, 2);
+
+    // Assert
+    expect(result.success).toBe(true);
+    const events = (result as Extract<typeof result, { success: true }>).value;
+
+    expect(events.find((e) => e.type === "AllChildrenMissed")).toBeDefined();
+    const allMissedEvent = events.find((e) => e.type === "AllChildrenMissed") as AllChildrenMissed;
+    expect(allMissedEvent.payload.gainedPoints).toBe(1); // 1人1点
+  });
+
+  describe("バリデーション", () => {
+    const defaultRoom: VotingRoom = {
+      id: "room-1",
+      phase: "voting",
+      hostId: "host",
+      players: [
+        { id: "host", name: "Host", score: 10 },
+        { id: "p2", name: "P2", score: 10 },
+        { id: "p3", name: "P3", score: 10 },
+      ],
+      round: 1,
+      parentPlayerId: "host",
+      theme: "お題",
+      meanings: [
+        { playerId: "host", text: "正解", choiceIndex: 0 },
+        { playerId: "p2", text: "偽1", choiceIndex: 1 },
+        { playerId: "p3", text: "偽2", choiceIndex: 2 },
+      ],
+      votes: [],
+    };
+
+    it("投票フェーズ以外では投票できない", () => {
+      const room = { ...defaultRoom, phase: "meaning_input" } as unknown as VotingRoom;
+      const result = decideVote(room, "p2", 0, 1, 1);
+      expect(result.success).toBe(false);
+    });
+
+    it("親は投票できない", () => {
+      const result = decideVote(defaultRoom, "host", 1, 1, 1);
+      expect(result.success).toBe(false);
+    });
+
+    it("重複投票はできない", () => {
+      const room: VotingRoom = {
+        ...defaultRoom,
+        votes: [{ playerId: "p2", choiceIndex: 0, betPoints: 1 }],
+      };
+      const result = decideVote(room, "p2", 2, 1, 1);
+      expect(result.success).toBe(false);
+    });
+
+    it("自作の意味には投票できない", () => {
+      const result = decideVote(defaultRoom, "p2", 1, 1, 1);
+      expect(result.success).toBe(false);
+    });
+
+    it("存在しない選択肢には投票できない", () => {
+      const result = decideVote(defaultRoom, "p2", 99, 1, 1);
+      expect(result.success).toBe(false);
+    });
+
+    it.each([0, 4])("賭け点が範囲外(%i)の場合は投票できない", (betPoints) => {
+      expect(decideVote(defaultRoom, "p2", 0, betPoints, 1).success).toBe(false);
+    });
   });
 });
