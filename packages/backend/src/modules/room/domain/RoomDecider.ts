@@ -3,8 +3,10 @@ import { err, ok, type Result } from "../../../shared/types";
 import type { PlayerId, Room, RoomId } from "./Room";
 import type {
   AllChildrenMissed,
+  GameEnded,
   GameStarted,
   MeaningListUpdated,
+  NextRoundStarted,
   PlayerJoined,
   RoomCreated,
   RoomEvent,
@@ -368,4 +370,50 @@ export const decideVote = (
   }
 
   return ok(events);
+};
+
+export const decideNextRound = (
+  room: Room,
+  playerId: PlayerId,
+  currentVersion: number,
+): Result<RoomEvent[], DomainError> => {
+  if (room.phase !== "round_result") {
+    return err({
+      type: "DomainError",
+      message: "Room is not in round result phase",
+    });
+  }
+
+  if (room.hostId !== playerId) {
+    return err({
+      type: "DomainError",
+      message: "Only host can proceed to next round",
+    });
+  }
+
+  const nextRound = room.round + 1;
+  const isGameEnded = nextRound > room.players.length;
+
+  if (isGameEnded) {
+    const gameEndedEvent = createEvent(
+      "GameEnded",
+      { roomId: room.id },
+      currentVersion + 1,
+    ) as GameEnded;
+    return ok([gameEndedEvent]);
+  }
+
+  const nextParentId = room.players[nextRound - 1].id;
+
+  const nextRoundStartedEvent = createEvent(
+    "NextRoundStarted",
+    {
+      roomId: room.id,
+      nextRound,
+      nextParentId,
+    },
+    currentVersion + 1,
+  ) as NextRoundStarted;
+
+  return ok([nextRoundStartedEvent]);
 };

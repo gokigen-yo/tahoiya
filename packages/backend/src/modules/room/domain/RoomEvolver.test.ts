@@ -8,8 +8,10 @@ import type {
 } from "./Room";
 import type {
   AllChildrenMissed,
+  GameEnded,
   GameStarted,
   MeaningListUpdated,
+  NextRoundStarted,
   PlayerJoined,
   RoomCreated,
   RoundResultAnnounced,
@@ -428,5 +430,73 @@ describe("evolve", () => {
     expect(newState.players).toContainEqual(expect.objectContaining({ id: hostId, score: 14 })); // 10 + (2 * 2人)
     expect(newState.players).toContainEqual(expect.objectContaining({ id: "p2", score: 8 })); // 10 - 2
     expect(newState.players).toContainEqual(expect.objectContaining({ id: "p3", score: 8 })); // 10 - 2
+  });
+
+  it("NextRoundStartedで次のラウンドへ遷移し、親が交代する", () => {
+    // Arrange
+    const initialState: RoundResultRoom = {
+      id: "room-1",
+      phase: "round_result",
+      hostId: "host",
+      players: [
+        { id: "host", name: "Host", score: 10 },
+        { id: "p2", name: "P2", score: 10 },
+      ],
+      round: 1,
+      parentPlayerId: "host",
+      theme: "お題",
+      meanings: [],
+      votes: [],
+    };
+
+    const event: NextRoundStarted = {
+      type: "NextRoundStarted",
+      payload: {
+        roomId: "room-1",
+        nextRound: 2,
+        nextParentId: "p2",
+      },
+      occurredAt: new Date(),
+      version: 11,
+    };
+
+    // Act
+    const newState = evolve(initialState, event);
+
+    // Assert
+    expect(newState.phase).toBe("theme_input");
+    const nextRoom = newState as ThemeInputRoom;
+    expect(nextRoom.round).toBe(2);
+    expect(nextRoom.parentPlayerId).toBe("p2");
+    expect(nextRoom.players).toEqual(initialState.players);
+  });
+
+  it("GameEndedで最終結果フェーズへ遷移する", () => {
+    // Arrange
+    const initialState: RoundResultRoom = {
+      id: "room-1",
+      phase: "round_result",
+      hostId: "host",
+      players: [{ id: "host", name: "Host", score: 10 }],
+      round: 1,
+      parentPlayerId: "host",
+      theme: "お題",
+      meanings: [],
+      votes: [],
+    };
+
+    const event: GameEnded = {
+      type: "GameEnded",
+      payload: { roomId: "room-1" },
+      occurredAt: new Date(),
+      version: 12,
+    };
+
+    // Act
+    const newState = evolve(initialState, event);
+
+    // Assert
+    expect(newState.phase).toBe("final_result");
+    expect(newState.players).toEqual(initialState.players);
   });
 });

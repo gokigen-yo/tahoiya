@@ -89,7 +89,8 @@ export type AllChildrenMissedPayload = {
 
 export type NextRoundStartedPayload = {
   readonly roomId: RoomId;
-  readonly playerId: PlayerId;
+  readonly nextRound: number;
+  readonly nextParentId: PlayerId;
 };
 
 export type GameEndedPayload = {

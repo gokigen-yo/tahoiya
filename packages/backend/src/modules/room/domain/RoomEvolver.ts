@@ -1,4 +1,5 @@
 import {
+  type FinalResultRoom,
   INITIAL_PLAYER_SCORE,
   type MeaningInputRoom,
   type Player,
@@ -178,6 +179,35 @@ export const evolve = (state: Room | null, event: RoomEvent): Room => {
             : { ...p, score: p.score - gainedPoints },
         ),
       };
+    }
+
+    case "NextRoundStarted": {
+      const { nextRound, nextParentId } = event.payload;
+      if (!state) {
+        throw new Error("Cannot start next round for non-existent room");
+      }
+
+      const nextRoundRoom: ThemeInputRoom = {
+        id: state.id,
+        players: state.players,
+        hostId: state.hostId,
+        phase: "theme_input",
+        round: nextRound,
+        parentPlayerId: nextParentId,
+      };
+
+      return nextRoundRoom;
+    }
+
+    case "GameEnded": {
+      if (!state) {
+        throw new Error("Cannot end game for non-existent room");
+      }
+
+      return {
+        ...state,
+        phase: "final_result",
+      } as FinalResultRoom;
     }
 
     default:

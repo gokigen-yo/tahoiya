@@ -1,17 +1,26 @@
 import { describe, expect, it } from "vitest";
-import type { MeaningInputRoom, ThemeInputRoom, VotingRoom, WaitingForJoinRoom } from "./Room";
+import type {
+  MeaningInputRoom,
+  RoundResultRoom,
+  ThemeInputRoom,
+  VotingRoom,
+  WaitingForJoinRoom,
+} from "./Room";
 import {
   decideCreateRoom,
   decideInputMeaning,
   decideInputTheme,
   decideJoinRoom,
+  decideNextRound,
   decideStartGame,
   decideVote,
 } from "./RoomDecider";
 import type {
   AllChildrenMissed,
+  GameEnded,
   GameStarted,
   MeaningListUpdated,
+  NextRoundStarted,
   PlayerJoined,
   RoomCreated,
   ScoreUpdated,
@@ -684,5 +693,64 @@ describe("decideVote", () => {
     it.each([0, 4])("賭け点が範囲外(%i)の場合は投票できない", (betPoints) => {
       expect(decideVote(defaultRoom, "p2", 0, betPoints, 1).success).toBe(false);
     });
+  });
+});
+
+describe("decideNextRound", () => {
+  const defaultRoom: RoundResultRoom = {
+    id: "room-1",
+    phase: "round_result",
+    hostId: "host",
+    players: [
+      { id: "host", name: "Host", score: 10 },
+      { id: "p2", name: "P2", score: 10 },
+      { id: "p3", name: "P3", score: 10 },
+    ],
+    round: 1,
+    parentPlayerId: "host",
+    theme: "お題",
+    meanings: [],
+    votes: [],
+  };
+
+  it("ホストが実行した場合、NextRoundStartedが発行される", () => {
+    // Act
+    const result = decideNextRound(defaultRoom, "host", 1);
+
+    // Assert
+    expect(result.success).toBe(true);
+    const event = (result as Extract<typeof result, { success: true }>)
+      .value[0] as NextRoundStarted;
+    expect(event.type).toBe("NextRoundStarted");
+    expect(event.payload.nextRound).toBe(2);
+    expect(event.payload.nextParentId).toBe("p2");
+  });
+
+  it("最終ラウンドの場合、GameEndedが発行される", () => {
+    // Arrange
+    const lastRoundRoom: RoundResultRoom = {
+      ...defaultRoom,
+      round: 3,
+      parentPlayerId: "p3",
+    };
+
+    // Act
+    const result = decideNextRound(lastRoundRoom, "host", 1);
+
+    // Assert
+    expect(result.success).toBe(true);
+    const event = (result as Extract<typeof result, { success: true }>).value[0] as GameEnded;
+    expect(event.type).toBe("GameEnded");
+  });
+
+  it("ホスト以外は実行できない", () => {
+    const result = decideNextRound(defaultRoom, "p2", 1);
+    expect(result.success).toBe(false);
+  });
+
+  it("ラウンド結果フェーズ以外では実行できない", () => {
+    const room = { ...defaultRoom, phase: "voting" } as unknown as RoundResultRoom;
+    const result = decideNextRound(room, "host", 1);
+    expect(result.success).toBe(false);
   });
 });
