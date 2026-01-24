@@ -1,23 +1,25 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { err, ok } from "../../../shared/types";
 import type { RoomRepository } from "../domain/RoomRepository";
 import { CreateRoomUseCase } from "./CreateRoomUseCase";
 
 describe("CreateRoomUseCase", () => {
-  let useCase: CreateRoomUseCase;
-  let mockRepo: RoomRepository;
-
-  beforeEach(() => {
-    mockRepo = {
-      save: vi.fn().mockResolvedValue(ok(undefined)),
+  const createMockRepo = () =>
+    ({
+      save: vi.fn(),
       findById: vi.fn(),
-    };
-    useCase = new CreateRoomUseCase(mockRepo);
-  });
+    }) as unknown as RoomRepository;
 
   it("ルームを正常に作成できる", async () => {
+    // Arrange
+    const mockRepo = createMockRepo();
+    vi.mocked(mockRepo.save).mockResolvedValue(ok(undefined));
+    const useCase = new CreateRoomUseCase(mockRepo);
+
+    // Act
     const result = await useCase.execute("TestUser");
 
+    // Assert
     expect(result.success).toBe(true);
 
     const successResult = result as Extract<typeof result, { success: true }>;
@@ -37,17 +39,28 @@ describe("CreateRoomUseCase", () => {
   });
 
   it("プレイヤー名が空の場合、エラーを返す（ドメインバリデーション）", async () => {
+    // Arrange
+    const mockRepo = createMockRepo();
+    const useCase = new CreateRoomUseCase(mockRepo);
+
+    // Act
     const result = await useCase.execute("");
 
+    // Assert
     expect(result.success).toBe(false);
     expect(mockRepo.save).not.toHaveBeenCalled();
   });
 
   it("リポジトリの保存が失敗した場合、エラーを返す", async () => {
-    mockRepo.save = vi.fn().mockResolvedValue(err({ type: "DomainError", message: "DB Error" }));
+    // Arrange
+    const mockRepo = createMockRepo();
+    vi.mocked(mockRepo.save).mockResolvedValue(err({ type: "DomainError", message: "DB Error" }));
+    const useCase = new CreateRoomUseCase(mockRepo);
 
+    // Act
     const result = await useCase.execute("TestUser");
 
+    // Assert
     expect(result.success).toBe(false);
   });
 });
