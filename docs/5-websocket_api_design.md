@@ -72,7 +72,7 @@
 type GameState = {
   // ルーム情報
   roomId: string;
-  phase: 'waiting' | 'theme_input' | 'meaning_input' | 'voting' | 'result' | 'final_result';
+  phase: 'waiting_for_join' | 'theme_input' | 'meaning_input' | 'voting' | 'round_result' | 'final_result';
   round: number;
 
   // プレイヤー情報
@@ -80,24 +80,24 @@ type GameState = {
     id: string; // 永続的なplayerId
     name: string;
     score: number;
-    // フェーズごとの状態
+    // フェーズごとの状態（任意）
     hasSubmittedMeaning?: boolean;
     hasVoted?: boolean;
   }[];
-  hostId: string; // ホストの永続playerId
-  parentPlayerId: string; // 親の永続playerId
+  hostId: string; // ホストのplayerId
+  parentPlayerId: string; // 親のplayerId
 
-  // ラウンドごとの情報
+  // 現在のラウンドの情報
   theme?: string; // 現在のお題
-  choices?: {
+  meanings?: {
     text: string;
-    authorId: string; // 偽の意味を書いた人の永続playerId or 'parent'
+    choiceIndex?: number; // 投票フェーズ以降で付与される
+    playerId?: string; // 意味を書いた人のPlayerId。結果発表時のみ
   }[];
   votes?: {
-    playerId: string; // 投票した人の永続playerId
+    playerId: string; // 投票した人のPlayerId
     choiceIndex: number;
     betPoints: number;
   }[];
-  roundResult?: any; // ラウンド結果の詳細（点数移動など）
 };
 ```
