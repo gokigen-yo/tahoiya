@@ -39,7 +39,6 @@ const voteUseCase = new VoteUseCase(roomRepository);
 const nextRoundUseCase = new NextRoundUseCase(roomRepository);
 
 const roomController = new RoomController(
-  io,
   createRoomUseCase,
   joinRoomUseCase,
   startGameUseCase,
@@ -59,7 +58,7 @@ io.on("connection", (socket) => {
     socket.emit("pong", { message: "Pong from server!" });
   });
 
-  roomController.handle(socket);
+  roomController.handle(socket, io);
 
   socket.on("disconnect", () => {
     console.log("User disconnected:", socket.id);

@@ -11,7 +11,6 @@ import { toResponse } from "./RoomStateResponse";
 
 export class RoomController {
   constructor(
-    private readonly io: Server,
     private readonly createRoomUseCase: CreateRoomUseCase,
     private readonly joinRoomUseCase: JoinRoomUseCase,
     private readonly startGameUseCase: StartGameUseCase,
@@ -22,8 +21,7 @@ export class RoomController {
     private readonly sessionStore: InMemorySessionStore,
   ) {}
 
-  handle(socket: Socket): void {
-    // 部屋の作成
+  handle(socket: Socket, io: Server): void {
     socket.on("create_room", async (data: { playerName: string }) => {
       console.log("create_room received:", data);
       const result = await this.createRoomUseCase.execute(data.playerName);
@@ -46,7 +44,6 @@ export class RoomController {
       console.log(`Room created: ${room.id} by player ${data.playerName} (${playerId})`);
     });
 
-    // 部屋への参加
     socket.on("join_room", async (data: { roomId: string; playerName: string }) => {
       console.log("join_room received:", data);
       const result = await this.joinRoomUseCase.execute({
@@ -63,21 +60,18 @@ export class RoomController {
       this.sessionStore.bind(socket.id, playerId);
       socket.join(room.id);
 
-      // 参加者に現在の状態と自分のPlayerIDを通知
       socket.emit("join_success", {
         roomId: room.id,
         playerId: playerId,
       });
 
-      // 部屋の全員に最新の状態を通知
-      this.io.to(room.id).emit("update_game_state", {
+      io.to(room.id).emit("update_game_state", {
         gameState: toResponse(room),
       });
 
       console.log(`Player ${data.playerName} (${playerId}) joined room ${room.id}`);
     });
 
-    // ゲーム開始
     socket.on("start_game", async (data: { roomId: string }) => {
       console.log("start_game received:", data);
       const playerId = this.sessionStore.getPlayerId(socket.id);
@@ -94,13 +88,12 @@ export class RoomController {
       }
 
       const { room } = result.value;
-      this.io.to(room.id).emit("update_game_state", {
+      io.to(room.id).emit("update_game_state", {
         gameState: toResponse(room),
       });
       console.log(`Game started in room ${room.id}`);
     });
 
-    // お題の提出
     socket.on(
       "submit_theme",
       async (data: { roomId: string; theme: string; meaning: string; refUrl?: string }) => {
@@ -123,14 +116,13 @@ export class RoomController {
         }
 
         const { room } = result.value;
-        this.io.to(room.id).emit("update_game_state", {
+        io.to(room.id).emit("update_game_state", {
           gameState: toResponse(room),
         });
         console.log(`Theme submitted in room ${room.id}: ${data.theme}`);
       },
     );
 
-    // 意味の提出
     socket.on("submit_meaning", async (data: { roomId: string; meaning: string }) => {
       console.log("submit_meaning received:", data);
       const playerId = this.sessionStore.getPlayerId(socket.id);
@@ -151,13 +143,12 @@ export class RoomController {
       }
 
       const { room } = result.value;
-      this.io.to(room.id).emit("update_game_state", {
+      io.to(room.id).emit("update_game_state", {
         gameState: toResponse(room),
       });
       console.log(`Meaning submitted in room ${room.id} by ${playerId}`);
     });
 
-    // 投票の提出
     socket.on(
       "submit_vote",
       async (data: { roomId: string; choiceIndex: number; betPoints: number }) => {
@@ -181,14 +172,13 @@ export class RoomController {
         }
 
         const { room } = result.value;
-        this.io.to(room.id).emit("update_game_state", {
+        io.to(room.id).emit("update_game_state", {
           gameState: toResponse(room),
         });
         console.log(`Vote submitted in room ${room.id} by ${playerId}`);
       },
     );
 
-    // 次のラウンドへ
     socket.on("next_round", async (data: { roomId: string }) => {
       console.log("next_round received:", data);
       const playerId = this.sessionStore.getPlayerId(socket.id);
@@ -205,7 +195,7 @@ export class RoomController {
       }
 
       const { room } = result.value;
-      this.io.to(room.id).emit("update_game_state", {
+      io.to(room.id).emit("update_game_state", {
         gameState: toResponse(room),
       });
       console.log(`Next round started in room ${room.id}`);
