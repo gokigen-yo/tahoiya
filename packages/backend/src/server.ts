@@ -3,7 +3,12 @@ import cors from "cors";
 import express from "express";
 import { Server } from "socket.io";
 import { CreateRoomUseCase } from "./modules/room/application/CreateRoomUseCase";
+import { InputMeaningUseCase } from "./modules/room/application/InputMeaningUseCase";
+import { InputThemeUseCase } from "./modules/room/application/InputThemeUseCase";
 import { JoinRoomUseCase } from "./modules/room/application/JoinRoomUseCase";
+import { NextRoundUseCase } from "./modules/room/application/NextRoundUseCase";
+import { StartGameUseCase } from "./modules/room/application/StartGameUseCase";
+import { VoteUseCase } from "./modules/room/application/VoteUseCase";
 import { InMemoryRoomRepository } from "./modules/room/infrastructure/InMemoryRoomRepository";
 import { toResponse } from "./modules/room/presentation/RoomStateResponse";
 import { InMemoryEventStore } from "./shared/infrastructure/InMemoryEventStore";
@@ -26,6 +31,11 @@ const roomRepository = new InMemoryRoomRepository(eventStore);
 const sessionStore = new InMemorySessionStore();
 const createRoomUseCase = new CreateRoomUseCase(roomRepository);
 const joinRoomUseCase = new JoinRoomUseCase(roomRepository);
+const startGameUseCase = new StartGameUseCase(roomRepository);
+const inputThemeUseCase = new InputThemeUseCase(roomRepository);
+const inputMeaningUseCase = new InputMeaningUseCase(roomRepository);
+const voteUseCase = new VoteUseCase(roomRepository);
+const nextRoundUseCase = new NextRoundUseCase(roomRepository);
 
 io.on("connection", (socket) => {
   console.log("A user connected:", socket.id);
@@ -92,6 +102,130 @@ io.on("connection", (socket) => {
       }
     },
   );
+
+  socket.on("start_game", async (data: { roomId: string }) => {
+    console.log("start_game received:", data);
+    const playerId = sessionStore.getPlayerId(socket.id);
+    if (!playerId) {
+      socket.emit("error", { message: "Unauthorized" });
+      return;
+    }
+
+    const result = await startGameUseCase.execute({ roomId: data.roomId, playerId });
+
+    if (result.success) {
+      const { room } = result.value;
+      io.to(room.id).emit("update_game_state", {
+        gameState: toResponse(room),
+      });
+      console.log(`Game started in room ${room.id}`);
+    } else {
+      socket.emit("error", { message: result.error.message });
+    }
+  });
+
+  socket.on(
+    "submit_theme",
+    async (data: { roomId: string; theme: string; meaning: string; refUrl?: string }) => {
+      console.log("submit_theme received:", data);
+      const playerId = sessionStore.getPlayerId(socket.id);
+      if (!playerId) {
+        socket.emit("error", { message: "Unauthorized" });
+        return;
+      }
+
+      const result = await inputThemeUseCase.execute({
+        roomId: data.roomId,
+        playerId,
+        theme: data.theme,
+      });
+
+      if (result.success) {
+        const { room } = result.value;
+        io.to(room.id).emit("update_game_state", {
+          gameState: toResponse(room),
+        });
+        console.log(`Theme submitted in room ${room.id}: ${data.theme}`);
+      } else {
+        socket.emit("error", { message: result.error.message });
+      }
+    },
+  );
+
+  socket.on("submit_meaning", async (data: { roomId: string; meaning: string }) => {
+    console.log("submit_meaning received:", data);
+    const playerId = sessionStore.getPlayerId(socket.id);
+    if (!playerId) {
+      socket.emit("error", { message: "Unauthorized" });
+      return;
+    }
+
+    const result = await inputMeaningUseCase.execute({
+      roomId: data.roomId,
+      playerId,
+      meaning: data.meaning,
+    });
+
+    if (result.success) {
+      const { room } = result.value;
+      io.to(room.id).emit("update_game_state", {
+        gameState: toResponse(room),
+      });
+      console.log(`Meaning submitted in room ${room.id} by ${playerId}`);
+    } else {
+      socket.emit("error", { message: result.error.message });
+    }
+  });
+
+  socket.on(
+    "submit_vote",
+    async (data: { roomId: string; choiceIndex: number; betPoints: number }) => {
+      console.log("submit_vote received:", data);
+      const playerId = sessionStore.getPlayerId(socket.id);
+      if (!playerId) {
+        socket.emit("error", { message: "Unauthorized" });
+        return;
+      }
+
+      const result = await voteUseCase.execute({
+        roomId: data.roomId,
+        playerId,
+        choiceIndex: data.choiceIndex,
+        betPoints: data.betPoints,
+      });
+
+      if (result.success) {
+        const { room } = result.value;
+        io.to(room.id).emit("update_game_state", {
+          gameState: toResponse(room),
+        });
+        console.log(`Vote submitted in room ${room.id} by ${playerId}`);
+      } else {
+        socket.emit("error", { message: result.error.message });
+      }
+    },
+  );
+
+  socket.on("next_round", async (data: { roomId: string }) => {
+    console.log("next_round received:", data);
+    const playerId = sessionStore.getPlayerId(socket.id);
+    if (!playerId) {
+      socket.emit("error", { message: "Unauthorized" });
+      return;
+    }
+
+    const result = await nextRoundUseCase.execute({ roomId: data.roomId, playerId });
+
+    if (result.success) {
+      const { room } = result.value;
+      io.to(room.id).emit("update_game_state", {
+        gameState: toResponse(room),
+      });
+      console.log(`Next round started in room ${room.id}`);
+    } else {
+      socket.emit("error", { message: result.error.message });
+    }
+  });
 
   socket.on("disconnect", () => {
     console.log("User disconnected:", socket.id);
