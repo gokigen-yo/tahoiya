@@ -5,6 +5,7 @@ import { Server } from "socket.io";
 import { CreateRoomUseCase } from "./modules/room/application/CreateRoomUseCase";
 import { JoinRoomUseCase } from "./modules/room/application/JoinRoomUseCase";
 import { InMemoryRoomRepository } from "./modules/room/infrastructure/InMemoryRoomRepository";
+import { toResponse } from "./modules/room/presentation/RoomStateResponse";
 import { InMemoryEventStore } from "./shared/infrastructure/InMemoryEventStore";
 import { InMemorySessionStore } from "./shared/infrastructure/InMemorySessionStore";
 
@@ -49,7 +50,7 @@ io.on("connection", (socket) => {
       socket.emit("room_created", {
         roomId: room.id,
         playerId: playerId,
-        gameState: room,
+        gameState: toResponse(room),
       });
 
       console.log(`Room created: ${room.id} by player ${data.playerName} (${playerId})`);
@@ -81,7 +82,7 @@ io.on("connection", (socket) => {
           });
 
           io.to(room.id).emit("update_game_state", {
-            gameState: room,
+            gameState: toResponse(room),
           });
 
           console.log(`Player ${player.name} (${playerId}) joined room ${room.id}`);
