@@ -44,7 +44,6 @@ describe("RoomController", () => {
     mockNextRoundUseCase = { execute: vi.fn() } as unknown as Mocked<NextRoundUseCase>;
     sessionStore = new InMemorySessionStore();
     roomController = new RoomController(
-      mockIo,
       mockCreateRoomUseCase,
       mockJoinRoomUseCase,
       mockStartGameUseCase,
@@ -78,7 +77,7 @@ describe("RoomController", () => {
 
       vi.mocked(mockCreateRoomUseCase.execute).mockResolvedValue(ok({ room, playerId }));
 
-      roomController.handle(mockSocket);
+      roomController.handle(mockSocket, mockIo);
 
       const calls = vi.mocked(mockSocket.on).mock.calls;
       const handler = calls.find(
@@ -121,7 +120,7 @@ describe("RoomController", () => {
 
       vi.mocked(mockJoinRoomUseCase.execute).mockResolvedValue(ok({ room, playerId }));
 
-      roomController.handle(mockSocket);
+      roomController.handle(mockSocket, mockIo);
 
       const calls = vi.mocked(mockSocket.on).mock.calls;
       const handler = calls.find(
@@ -168,7 +167,7 @@ describe("RoomController", () => {
       };
       mockStartGameUseCase.execute.mockResolvedValue(ok({ room }));
 
-      roomController.handle(mockSocket);
+      roomController.handle(mockSocket, mockIo);
       const calls = vi.mocked(mockSocket.on).mock.calls;
       const handler = calls.find(
         (call: [string, unknown]) => call[0] === "start_game",
@@ -197,7 +196,7 @@ describe("RoomController", () => {
       };
       mockInputThemeUseCase.execute.mockResolvedValue(ok({ room }));
 
-      roomController.handle(mockSocket);
+      roomController.handle(mockSocket, mockIo);
       const calls = vi.mocked(mockSocket.on).mock.calls;
       const handler = calls.find(
         (call: [string, unknown]) => call[0] === "submit_theme",
@@ -231,7 +230,7 @@ describe("RoomController", () => {
       };
       mockInputMeaningUseCase.execute.mockResolvedValue(ok({ room }));
 
-      roomController.handle(mockSocket);
+      roomController.handle(mockSocket, mockIo);
       const calls = vi.mocked(mockSocket.on).mock.calls;
       const handler = calls.find(
         (call: [string, unknown]) => call[0] === "submit_meaning",
@@ -262,7 +261,7 @@ describe("RoomController", () => {
       };
       mockVoteUseCase.execute.mockResolvedValue(ok({ room }));
 
-      roomController.handle(mockSocket);
+      roomController.handle(mockSocket, mockIo);
       const calls = vi.mocked(mockSocket.on).mock.calls;
       const handler = calls.find(
         (call: [string, unknown]) => call[0] === "submit_vote",
@@ -293,7 +292,7 @@ describe("RoomController", () => {
       };
       mockNextRoundUseCase.execute.mockResolvedValue(ok({ room }));
 
-      roomController.handle(mockSocket);
+      roomController.handle(mockSocket, mockIo);
       const calls = vi.mocked(mockSocket.on).mock.calls;
       const handler = calls.find(
         (call: [string, unknown]) => call[0] === "next_round",

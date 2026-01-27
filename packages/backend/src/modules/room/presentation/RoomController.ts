@@ -11,7 +11,6 @@ import { toResponse } from "./RoomStateResponse";
 
 export class RoomController {
   constructor(
-    private readonly io: Server,
     private readonly createRoomUseCase: CreateRoomUseCase,
     private readonly joinRoomUseCase: JoinRoomUseCase,
     private readonly startGameUseCase: StartGameUseCase,
@@ -22,7 +21,7 @@ export class RoomController {
     private readonly sessionStore: InMemorySessionStore,
   ) {}
 
-  handle(socket: Socket): void {
+  handle(socket: Socket, io: Server): void {
     // 部屋の作成
     socket.on("create_room", async (data: { playerName: string }) => {
       console.log("create_room received:", data);
@@ -70,7 +69,7 @@ export class RoomController {
       });
 
       // 部屋の全員に最新の状態を通知
-      this.io.to(room.id).emit("update_game_state", {
+      io.to(room.id).emit("update_game_state", {
         gameState: toResponse(room),
       });
 
@@ -94,7 +93,7 @@ export class RoomController {
       }
 
       const { room } = result.value;
-      this.io.to(room.id).emit("update_game_state", {
+      io.to(room.id).emit("update_game_state", {
         gameState: toResponse(room),
       });
       console.log(`Game started in room ${room.id}`);
@@ -123,7 +122,7 @@ export class RoomController {
         }
 
         const { room } = result.value;
-        this.io.to(room.id).emit("update_game_state", {
+        io.to(room.id).emit("update_game_state", {
           gameState: toResponse(room),
         });
         console.log(`Theme submitted in room ${room.id}: ${data.theme}`);
@@ -151,7 +150,7 @@ export class RoomController {
       }
 
       const { room } = result.value;
-      this.io.to(room.id).emit("update_game_state", {
+      io.to(room.id).emit("update_game_state", {
         gameState: toResponse(room),
       });
       console.log(`Meaning submitted in room ${room.id} by ${playerId}`);
@@ -181,7 +180,7 @@ export class RoomController {
         }
 
         const { room } = result.value;
-        this.io.to(room.id).emit("update_game_state", {
+        io.to(room.id).emit("update_game_state", {
           gameState: toResponse(room),
         });
         console.log(`Vote submitted in room ${room.id} by ${playerId}`);
@@ -205,7 +204,7 @@ export class RoomController {
       }
 
       const { room } = result.value;
-      this.io.to(room.id).emit("update_game_state", {
+      io.to(room.id).emit("update_game_state", {
         gameState: toResponse(room),
       });
       console.log(`Next round started in room ${room.id}`);
