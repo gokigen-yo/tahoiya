@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { usePlayerId } from "@/features/room/hooks/usePlayerId";
+import { usePlayerIdOnLocalStorage } from "@/features/room/hooks/usePlayerIdOnLocalStorage";
 import type { RoomStateResponse } from "@/features/room/types/RoomStateResponse";
 import { getSocket } from "@/lib/socket";
 import { CreateRoomForm } from "../components/CreateRoomForm";
@@ -11,7 +11,7 @@ export function CreateRoomContainer() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const { setPlayerId } = usePlayerId();
+  const { setPlayerId } = usePlayerIdOnLocalStorage();
 
   const handleCreateRoom = (playerName: string) => {
     if (!playerName.trim()) {
