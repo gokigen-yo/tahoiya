@@ -6,8 +6,9 @@
     "dev:backend": "pnpm --filter backend dev",
     "dev:frontend": "pnpm --filter frontend dev",
     "test:backend": "pnpm --filter backend test",
-    "build": "pnpm -r build",
+    "test:frontend": "pnpm --filter frontend test",
     "test": "pnpm -r test",
+    "build": "pnpm -r build",
     "lint": "biome check .",
     "format": "biome format --write ."
   },
