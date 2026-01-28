@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 const PLAYER_ID_KEY = "tahoiya_player_id";
 
-export function usePlayerIdOnLocalStorage() {
+export function usePlayerId() {
   const [playerId, setPlayerIdState] = useState<string | null>(null);
 
   useEffect(() => {

@@ -52,7 +52,7 @@ expect(component.state.isSubmitting).toBe(true);
 
 ### Presentational Components
 
-プレゼンテーショナルコンポーネントでは以下をテストします:
+Presentationalコンポーネントでは以下をテストします:
 
 1. 初期表示: ユーザーが最初に見る画面
 2. ユーザー操作: クリック、入力、キーボード操作
@@ -85,11 +85,38 @@ describe("CreateRoomForm", () => {
 
 ### Container Components
 
-コンテナコンポーネントでは、モックを使用してビジネスロジックをテストします（今後実装予定）。
+Containersコンポーネントは、インテグレーションテストとして実装します。
+
+1. インテグレーションテスト: 内部で使用しているカスタムフック自体をモックするのではなく、フックが呼び出す外部依存（API、Socket、localStorage等）のみをモックします。
+2. 副作用の検証: ユーザー操作の結果として発生する副作用（データの読み込み、Socket送信、ナビゲーション、永続ストレージへの保存）を検証します。
+
+**Example (Socket.IO & localStorage):**
+```typescript
+it("ルーム作成に成功すると、ゲーム画面に遷移する", async () => {
+  const user = userEvent.setup();
+  render(<CreateRoomContainer />);
+
+  // フォーム送信
+  await user.type(screen.getByPlaceholderText("プレイヤー名を入力"), "テストプレイヤー");
+  await user.click(screen.getByRole("button", { name: "ルームを作成" }));
+
+  // Socket応答のシミュレーション（外部依存のモック操作）
+  const roomCreatedCallback = (mockOnce as Mock).mock.calls.find(call => call[0] === "room_created")?.[1];
+  await waitFor(() => {
+    roomCreatedCallback({ roomId: "test-room", playerId: "test-player" });
+  });
+
+  // 遷移先の画面の検証
+  expect(screen.getByRole("button", { name: "ゲームを開始" })).toBeInTheDocument();
+});
+```
 
 ### Custom Hooks
 
-カスタムフックは、実際の使用シナリオに基づいてテストします（今後実装予定）。
+カスタムフックは、基本的にはコンポーネントのテスト経由でテストします。
+ただし、フックの実装が複雑な場合は単体テストを用意します。
+
+あくまでユーザーの画面がどのようにテストするかを検証してください。
 
 ## What NOT to Test
 
