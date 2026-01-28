@@ -49,6 +49,7 @@ FrontendとBackendで実行環境が異なるため、個別に設定します�
 ## アプリケーション実行コマンド
 
 - `pnpm test:backend`: バックエンドの単体テスト実行
+- `pnpm test:frontend`: フロントエンドの単体テスト実行
 - `pnpm test`: リポジトリ全体の単体テスト実行
 - `pnpm build`: アプリケーションのビルド
 - `pnpm dev:frontend`: フロントエンドのアプリケーションのローカル起動
