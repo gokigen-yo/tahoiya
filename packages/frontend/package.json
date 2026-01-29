@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "biome check .",
-    "test": "vitest"
+    "test": "vitest",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "@chakra-ui/react": "^3.30.0",
@@ -20,13 +22,22 @@
     "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
+    "@storybook/addon-vitest": "^10.2.1",
+    "@storybook/nextjs-vite": "^10.2.1",
+    "@storybook/react": "^10.2.1",
+    "@storybook/test": "8.6.15",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^5.1.2",
+    "@vitest/browser-playwright": "4.0.18",
+    "@vitest/coverage-v8": "4.0.18",
     "jsdom": "^27.4.0",
+    "playwright": "^1.58.0",
+    "storybook": "^10.2.1",
+    "vite": "^7.3.1",
     "vitest": "^4.0.18"
   }
 }
