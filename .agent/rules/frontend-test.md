@@ -52,7 +52,9 @@ expect(component.state.isSubmitting).toBe(true);
 
 ### Presentational Components
 
-Presentationalコンポーネントでは以下をテストします:
+Presentationalコンポーネントは **Storybook** 上で単体テストとして実装します。
+
+以下をテスト（検証）します:
 
 1. 初期表示: ユーザーが最初に見る画面
 2. ユーザー操作: クリック、入力、キーボード操作
@@ -61,26 +63,42 @@ Presentationalコンポーネントでは以下をテストします:
 
 Example:
 ```typescript
-describe("CreateRoomForm", () => {
-  it("ユーザーがルーム作成フォームを初めて見たとき、必要な情報が全て表示されている", () => {
-    render(<CreateRoomForm onSubmit={vi.fn()} isLoading={false} error={null} />);
-    
-    expect(screen.getByRole("heading", { name: "たほいや" })).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("プレイヤー名を入力")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "ルームを作成" })).toBeInTheDocument();
-  });
+import type { Meta, StoryObj } from "@storybook/react";
+import { expect, fn, userEvent, within } from "@storybook/test";
+import { CreateRoomForm } from "./CreateRoomForm";
 
-  it("ユーザーがプレイヤー名を入力してボタンをクリックすると、ルーム作成処理が実行される", async () => {
-    const user = userEvent.setup();
-    const onSubmit = vi.fn();
-    render(<CreateRoomForm onSubmit={onSubmit} isLoading={false} error={null} />);
+const meta: Meta<typeof CreateRoomForm> = {
+  title: "Features/Room/CreateRoomForm",
+  component: CreateRoomForm,
+  args: {
+    onSubmit: fn(),
+    isLoading: false,
+    error: null,
+  },
+};
 
-    await user.type(screen.getByPlaceholderText("プレイヤー名を入力"), "テストプレイヤー");
-    await user.click(screen.getByRole("button", { name: "ルームを作成" }));
+export default meta;
+type Story = StoryObj<typeof CreateRoomForm>;
 
-    expect(onSubmit).toHaveBeenCalledWith("テストプレイヤー");
-  });
-});
+export const Default: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // 初期表示の検証
+    await expect(canvas.getByRole("heading", { name: "たほいや" })).toBeInTheDocument();
+  },
+};
+
+export const Interaction: Story = {
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+    // ユーザー操作の検証
+    const input = canvas.getByPlaceholderText("プレイヤー名を入力");
+    await userEvent.type(input, "テストプレイヤー");
+    await userEvent.click(canvas.getByRole("button", { name: "ルームを作成" }));
+
+    await expect(args.onSubmit).toHaveBeenCalledWith("テストプレイヤー");
+  },
+};
 ```
 
 ### Container Components
@@ -90,7 +108,7 @@ Containersコンポーネントは、インテグレーションテストとし�
 1. インテグレーションテスト: 内部で使用しているカスタムフック自体をモックするのではなく、フックが呼び出す外部依存（API、Socket、localStorage等）のみをモックします。
 2. 副作用の検証: ユーザー操作の結果として発生する副作用（データの読み込み、Socket送信、ナビゲーション、永続ストレージへの保存）を検証します。
 
-**Example (Socket.IO & localStorage):**
+**Example:**
 ```typescript
 it("ルーム作成に成功すると、ゲーム画面に遷移する", async () => {
   const user = userEvent.setup();
