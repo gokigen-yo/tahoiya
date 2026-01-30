@@ -20,6 +20,7 @@ export default meta;
 type Story = StoryObj<typeof CreateRoomForm>;
 
 export const Default: Story = {
+  name: "ユーザーがルーム作成フォームを初めて見たとき、必要な情報が全て表示されている",
   args: {},
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -39,6 +40,7 @@ export const Default: Story = {
 };
 
 export const Interaction: Story = {
+  name: "ユーザーがプレイヤー名を入力してボタンをクリックすると、ルーム作成処理が実行される",
   args: {},
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
@@ -58,6 +60,7 @@ export const Interaction: Story = {
 };
 
 export const Loading: Story = {
+  name: "ルーム作成処理中は、ユーザーが再度送信できないようフォームが無効化される",
   args: {
     isLoading: true,
   },
@@ -74,6 +77,7 @@ export const Loading: Story = {
 };
 
 export const WithError: Story = {
+  name: "ルーム作成に失敗したとき、ユーザーにエラーメッセージが表示される",
   args: {
     error: "プレイヤー名を入力してください",
   },
