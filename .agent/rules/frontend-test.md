@@ -52,7 +52,8 @@ expect(component.state.isSubmitting).toBe(true);
 
 ### Presentational Components
 
-Presentationalコンポーネントは **Storybook** 上で単体テストとして実装します。
+PresentationalコンポーネントはStorybook上で単体テストとして実装します。
+`name` プロパティに、検証するユーザーストーリーを日本語で明示します。
 
 以下をテスト（検証）します:
 
@@ -81,6 +82,7 @@ export default meta;
 type Story = StoryObj<typeof CreateRoomForm>;
 
 export const Default: Story = {
+  name: "ユーザーがルーム作成フォームを初めて見たとき、必要な情報が全て表示されている",
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     // 初期表示の検証
@@ -89,6 +91,7 @@ export const Default: Story = {
 };
 
 export const Interaction: Story = {
+  name: "ユーザーがプレイヤー名を入力してボタンをクリックすると、ルーム作成処理が実行される",
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
     // ユーザー操作の検証
@@ -163,7 +166,7 @@ it("ルーム作成に成功すると、ゲーム画面に遷移する", async (
 ```
 src/features/room/components/
 ├── CreateRoomForm.tsx
-└── CreateRoomForm.test.tsx
+└── CreateRoomForm.stories.tsx
 ```
 
 ## References
