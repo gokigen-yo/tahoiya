@@ -1,21 +1,36 @@
 "use client";
 
-import { Box, Button, Center, Heading, Spinner, Text, VStack } from "@chakra-ui/react";
+import { Center, Spinner } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { usePlayerId } from "@/features/room/hooks/usePlayerId";
+import { useRoomInitialState } from "../hooks/useRoomInitialState";
+import type { RoomStateResponse } from "../types/RoomStateResponse";
 import { JoinRoomContainer } from "./JoinRoomContainer";
+import { RoomContainer } from "./RoomContainer";
 
 type RoomAuthGuardProps = {
   roomId: string;
 };
 
 export function RoomAuthGuard({ roomId }: RoomAuthGuardProps) {
-  const { playerId, setPlayerId, clearPlayerId } = usePlayerId();
+  const { playerId, setPlayerId } = usePlayerId();
+  const { getInitialState } = useRoomInitialState(roomId);
+  const [initialGameState, setInitialGameState] = useState<RoomStateResponse | null>(null);
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
-  }, []);
+    // 初回マウント時にのみ sessionStorage から取得を試みる
+    const savedState = getInitialState();
+    if (savedState) {
+      setInitialGameState(savedState);
+    }
+  }, [getInitialState]);
+
+  const handleJoin = (newPlayerId: string, gameState: RoomStateResponse) => {
+    setPlayerId(newPlayerId);
+    setInitialGameState(gameState);
+  };
 
   if (!isClient) {
     return (
@@ -26,23 +41,14 @@ export function RoomAuthGuard({ roomId }: RoomAuthGuardProps) {
   }
 
   if (!playerId) {
-    return <JoinRoomContainer roomId={roomId} onJoin={setPlayerId} />;
+    return <JoinRoomContainer roomId={roomId} onJoin={handleJoin} />;
   }
 
-  // TODO: 将来的に RoomContainer を実装して置き換える
   return (
-    <Box maxW="container.md" mx="auto" mt={8} p={6}>
-      <VStack gap={6}>
-        <Heading>ルーム: {roomId}</Heading>
-        <Text fontSize="xl">
-          参加中プレイヤーID: <strong>{playerId}</strong>
-        </Text>
-        <Box>
-          <Button onClick={clearPlayerId} colorScheme="red" variant="outline" size="sm">
-            退出する（デバッグ用）
-          </Button>
-        </Box>
-      </VStack>
-    </Box>
+    <RoomContainer
+      roomId={roomId}
+      playerId={playerId}
+      initialGameState={initialGameState || undefined}
+    />
   );
 }

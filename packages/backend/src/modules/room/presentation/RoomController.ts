@@ -63,6 +63,7 @@ export class RoomController {
       socket.emit("join_success", {
         roomId: room.id,
         playerId: playerId,
+        gameState: toResponse(room),
       });
 
       io.to(room.id).emit("update_game_state", {
