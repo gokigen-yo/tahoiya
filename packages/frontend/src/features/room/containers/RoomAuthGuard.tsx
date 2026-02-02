@@ -13,7 +13,7 @@ type RoomAuthGuardProps = {
 };
 
 export function RoomAuthGuard({ roomId }: RoomAuthGuardProps) {
-  const { playerId, setPlayerId } = usePlayerId();
+  const { playerId, setPlayerId } = usePlayerId(roomId);
   const { getInitialState } = useRoomInitialState(roomId);
   const [initialGameState, setInitialGameState] = useState<RoomStateResponse | null>(null);
   const [isClient, setIsClient] = useState(false);

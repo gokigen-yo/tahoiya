@@ -38,7 +38,7 @@ export function CreateRoomContainer() {
       (data: { roomId: string; playerId: string; gameState: RoomStateResponse }) => {
         setIsLoading(false);
         // playerId を localStorage に保存
-        setPlayerId(data.playerId);
+        setPlayerId(data.playerId, data.roomId);
 
         // ルーム状態を sessionStorage に一時保存
         saveRoomInitialState(data.roomId, data.gameState);
