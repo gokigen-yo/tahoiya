@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import type { RoomStateResponse } from "@/features/room/types/RoomStateResponse";
 import { getSocket } from "@/lib/socket";
 import { JoinRoomForm } from "../components/JoinRoomForm";
 
 type JoinRoomContainerProps = {
   roomId: string;
-  onJoin: (playerId: string) => void;
+  onJoin: (playerId: string, gameState: RoomStateResponse) => void;
 };
 
 export function JoinRoomContainer({ roomId, onJoin }: JoinRoomContainerProps) {
@@ -24,10 +25,13 @@ export function JoinRoomContainer({ roomId, onJoin }: JoinRoomContainerProps) {
 
     const socket = getSocket();
 
-    socket.once("join_success", (data: { roomId: string; playerId: string }) => {
-      setIsLoading(false);
-      onJoin(data.playerId);
-    });
+    socket.once(
+      "join_success",
+      (data: { roomId: string; playerId: string; gameState: RoomStateResponse }) => {
+        setIsLoading(false);
+        onJoin(data.playerId, data.gameState);
+      },
+    );
 
     socket.once("error", (data: { message: string }) => {
       setIsLoading(false);

@@ -5,9 +5,14 @@ import { RoomAuthGuard } from "./RoomAuthGuard";
 
 const mockEmit = vi.fn();
 const mockOnce = vi.fn();
+const mockOn = vi.fn();
+const mockOff = vi.fn();
+
 const mockSocket = {
   emit: mockEmit,
   once: mockOnce,
+  on: mockOn,
+  off: mockOff,
 };
 vi.mock("@/lib/socket", () => ({
   getSocket: () => mockSocket,
@@ -21,7 +26,7 @@ describe("JoinRoomContainer", () => {
     localStorage.clear();
   });
 
-  it("ルーム参加に成功すると、参加フォームが消えてプレイヤー情報の画面に切り替わる", async () => {
+  it("ルーム参加に成功すると、参加フォームが消えて待機画面に切り替わる", async () => {
     const user = userEvent.setup();
     render(<RoomAuthGuard roomId={roomId} />);
     expect(screen.getByRole("heading", { name: "ルームに参加" })).toBeInTheDocument();
@@ -38,12 +43,19 @@ describe("JoinRoomContainer", () => {
       joinSuccessCallback({
         roomId: roomId,
         playerId: "test-player-id",
+        gameState: {
+          phase: "waiting_for_join",
+          roomId: roomId,
+          hostId: "test-player-id",
+          players: [{ id: "test-player-id", name: "参加プレイヤー", score: 0 }],
+        },
       });
     });
 
     expect(screen.queryByRole("heading", { name: "ルームに参加" })).not.toBeInTheDocument();
-    expect(screen.getByText(/参加中プレイヤーID:/)).toBeInTheDocument();
-    expect(screen.getByText("test-player-id")).toBeInTheDocument();
+    // 待機ルームが表示されているはず
+    expect(screen.getByText("待機ルーム")).toBeInTheDocument();
+    expect(screen.getByText("参加プレイヤー")).toBeInTheDocument();
   });
 
   it("サーバーからエラーが返された場合、エラーメッセージが表示されフォームが残る", async () => {

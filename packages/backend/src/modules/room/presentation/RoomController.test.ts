@@ -137,6 +137,10 @@ describe("RoomController", () => {
       expect(mockSocket.emit).toHaveBeenCalledWith("join_success", {
         roomId,
         playerId,
+        gameState: expect.objectContaining({
+          phase: "waiting_for_join",
+          roomId,
+        }),
       });
       expect(mockIo.to).toHaveBeenCalledWith(roomId);
       expect(mockIo.emit).toHaveBeenCalledWith("update_game_state", {

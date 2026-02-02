@@ -31,6 +31,8 @@ export function CreateRoomContainer() {
         setIsLoading(false);
         // playerId を localStorage に保存
         setPlayerId(data.playerId);
+        // ルーム状態を sessionStorage に一時保存し、遷移後の画面で即座に表示できるようにする
+        sessionStorage.setItem(`room_init_state_${data.roomId}`, JSON.stringify(data.gameState));
         // ルームページへ遷移
         router.push(`/rooms/${data.roomId}`);
       },
