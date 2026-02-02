@@ -1,9 +1,10 @@
 "use client";
 
-import { Box, Center, Spinner, Text } from "@chakra-ui/react";
+import { Box, Heading, Text } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import type { RoomStateResponse } from "@/features/room/types/RoomStateResponse";
 import { getSocket } from "@/lib/socket";
+import { ThemeInputView } from "../components/ThemeInputView";
 import { WaitingRoomView } from "../components/WaitingRoomView";
 
 type RoomContainerProps = {
@@ -19,16 +20,14 @@ export function RoomContainer({ roomId, playerId, initialGameState }: RoomContai
   useEffect(() => {
     const socket = getSocket();
 
-    // ゲーム状態の更新を受け取る
-    const handleUpdateGameState = (data: { gameState: RoomStateResponse }) => {
+    socket.on("update_game_state", (data: { gameState: RoomStateResponse }) => {
       console.log("update_game_state", data);
       setGameState(data.gameState);
-    };
-
-    socket.on("update_game_state", handleUpdateGameState);
+      setIsLoading(false);
+    });
 
     return () => {
-      socket.off("update_game_state", handleUpdateGameState);
+      socket.off("update_game_state");
     };
   }, []);
 
@@ -45,14 +44,19 @@ export function RoomContainer({ roomId, playerId, initialGameState }: RoomContai
     socket.once("error", () => setIsLoading(false));
   };
 
+  const handleSubmitTheme = (theme: string) => {
+    setIsLoading(true);
+    const socket = getSocket();
+    socket.emit("submit_theme", { roomId, theme });
+    // ローディング解除は update_game_state を受け取った時、あるいは別途制御
+    // ここでは簡易的に、フェーズが変わればコンポーネントごとかわるのでそのままで良いが
+    // エラーハンドリングなどを厳密にやるなら socket.once('error') などが必要
+    setTimeout(() => setIsLoading(false), 2000); // タイムアウトだけつけておく（実際はイベントで遷移）
+  };
+
   // 状態ごとのレンダリング
   if (!gameState) {
-    return (
-      <Center h="50vh">
-        <Spinner size="xl" />
-        <Text ml={4}>ルーム情報を取得中...</Text>
-      </Center>
-    );
+    return <Heading>ルーム情報を取得中...</Heading>;
   }
 
   // 待機画面
@@ -63,6 +67,19 @@ export function RoomContainer({ roomId, playerId, initialGameState }: RoomContai
         players={gameState.players}
         isHost={gameState.hostId === playerId}
         onStartGame={handleStartGame}
+        isLoading={isLoading}
+      />
+    );
+  }
+
+  if (gameState.phase === "theme_input") {
+    const parentPlayer = gameState.players.find((p) => p.id === gameState.parentPlayerId);
+    return (
+      <ThemeInputView
+        round={gameState.round}
+        isParent={gameState.parentPlayerId === playerId}
+        parentName={parentPlayer?.name || "不明なプレイヤー"}
+        onSubmit={handleSubmitTheme}
         isLoading={isLoading}
       />
     );
