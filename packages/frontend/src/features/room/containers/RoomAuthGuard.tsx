@@ -3,6 +3,7 @@
 import { Center, Spinner } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { usePlayerId } from "@/features/room/hooks/usePlayerId";
+import { useRoomInitialState } from "../hooks/useRoomInitialState";
 import type { RoomStateResponse } from "../types/RoomStateResponse";
 import { JoinRoomContainer } from "./JoinRoomContainer";
 import { RoomContainer } from "./RoomContainer";
@@ -13,26 +14,18 @@ type RoomAuthGuardProps = {
 
 export function RoomAuthGuard({ roomId }: RoomAuthGuardProps) {
   const { playerId, setPlayerId } = usePlayerId();
-  const [initialGameState, setInitialGameState] = useState<RoomStateResponse | null>(() => {
-    if (typeof window !== "undefined") {
-      const saved = sessionStorage.getItem(`room_init_state_${roomId}`);
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          sessionStorage.removeItem(`room_init_state_${roomId}`);
-          return parsed;
-        } catch (e) {
-          console.error("Failed to parse initial state", e);
-        }
-      }
-    }
-    return null;
-  });
+  const { getInitialState } = useRoomInitialState(roomId);
+  const [initialGameState, setInitialGameState] = useState<RoomStateResponse | null>(null);
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
-  }, []);
+    // 初回マウント時にのみ sessionStorage から取得を試みる
+    const savedState = getInitialState();
+    if (savedState) {
+      setInitialGameState(savedState);
+    }
+  }, [getInitialState]);
 
   const handleJoin = (newPlayerId: string, gameState: RoomStateResponse) => {
     setPlayerId(newPlayerId);

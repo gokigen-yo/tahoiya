@@ -1,17 +1,25 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePlayerId } from "@/features/room/hooks/usePlayerId";
 import type { RoomStateResponse } from "@/features/room/types/RoomStateResponse";
 import { getSocket } from "@/lib/socket";
 import { CreateRoomForm } from "../components/CreateRoomForm";
+import { saveRoomInitialState } from "../hooks/useRoomInitialState";
 
 export function CreateRoomContainer() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const { setPlayerId } = usePlayerId();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) return null;
 
   const handleCreateRoom = (playerName: string) => {
     if (!playerName.trim()) {
@@ -31,8 +39,10 @@ export function CreateRoomContainer() {
         setIsLoading(false);
         // playerId を localStorage に保存
         setPlayerId(data.playerId);
-        // ルーム状態を sessionStorage に一時保存し、遷移後の画面で即座に表示できるようにする
-        sessionStorage.setItem(`room_init_state_${data.roomId}`, JSON.stringify(data.gameState));
+
+        // ルーム状態を sessionStorage に一時保存
+        saveRoomInitialState(data.roomId, data.gameState);
+
         // ルームページへ遷移
         router.push(`/rooms/${data.roomId}`);
       },
