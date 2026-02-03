@@ -20,6 +20,9 @@ export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole("heading", { name: "ルームに参加" })).toBeInTheDocument();
+    await expect(canvas.getByPlaceholderText("プレイヤー名を入力")).toBeInTheDocument();
+    const submitButton = canvas.getByRole("button", { name: "ルームに参加" });
+    await expect(submitButton).toBeDisabled();
   },
 };
 
@@ -29,7 +32,10 @@ export const Interaction: Story = {
     const canvas = within(canvasElement);
     const input = canvas.getByPlaceholderText("プレイヤー名を入力");
     await userEvent.type(input, "参加プレイヤー");
-    await userEvent.click(canvas.getByRole("button", { name: "ルームに参加" }));
+
+    const submitButton = canvas.getByRole("button", { name: "ルームに参加" });
+    await expect(submitButton).toBeEnabled();
+    await userEvent.click(submitButton);
 
     await expect(args.onSubmit).toHaveBeenCalledWith("参加プレイヤー");
   },
@@ -42,7 +48,12 @@ export const Loading: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole("button", { name: "参加中" })).toBeDisabled();
+    const buttons = canvas.getAllByRole("button");
+    const submitButton = buttons.find(
+      (b) => b.hasAttribute("data-loading") || b.textContent?.includes("参加中"),
+    );
+    await expect(submitButton).toBeDefined();
+    await expect(submitButton).toBeDisabled();
   },
 };
 
@@ -54,5 +65,7 @@ export const WithError: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText("ルームが見つかりません")).toBeInTheDocument();
+    const input = canvas.getByPlaceholderText("プレイヤー名を入力");
+    await expect(input).toBeInTheDocument();
   },
 };
