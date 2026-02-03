@@ -1,8 +1,10 @@
+import { within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import type {
   MeaningInputState,
   ThemeInputState,
+  VotingState,
   WaitingForJoinState,
 } from "@/features/room/types/RoomStateResponse";
 import { render, screen, waitFor } from "@/test/test-utils";
@@ -51,7 +53,8 @@ describe("RoomContainer", () => {
       hostId: playerId, // 自分がホスト
       players: [
         { id: playerId, name: "自分", score: 0 },
-        { id: "player-2", name: "相手", score: 0 },
+        { id: "player-2", name: "相手1", score: 0 },
+        { id: "player-3", name: "相手2", score: 0 },
       ],
     };
 
@@ -61,7 +64,8 @@ describe("RoomContainer", () => {
 
     expect(screen.getByText("待機ルーム")).toBeInTheDocument();
     expect(screen.getByText("自分")).toBeInTheDocument();
-    expect(screen.getByText("相手")).toBeInTheDocument();
+    expect(screen.getByText("相手1")).toBeInTheDocument();
+    expect(screen.getByText("相手2")).toBeInTheDocument();
     // ホストなので開始ボタンがある
     expect(screen.getByRole("button", { name: "ゲームを開始する" })).toBeInTheDocument();
   });
@@ -80,7 +84,8 @@ describe("RoomContainer", () => {
       hostId: playerId,
       players: [
         { id: playerId, name: "自分", score: 0 },
-        { id: "player-2", name: "相手", score: 0 },
+        { id: "player-2", name: "相手1", score: 0 },
+        { id: "player-3", name: "相手2", score: 0 },
       ],
     };
 
@@ -155,6 +160,7 @@ describe("RoomContainer", () => {
         players: [
           { id: playerId, name: "自分", score: 0 },
           { id: "parent-id", name: "親プレイヤー", score: 0 },
+          { id: "player-3", name: "相手2", score: 0 },
         ],
         round: 1,
         parentPlayerId: "parent-id", // 相手が親
@@ -242,11 +248,75 @@ describe("RoomContainer", () => {
       expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
     });
   });
+
+  describe("投票フェーズ（voting）", () => {
+    const setupVoting = async (hasVoted: boolean, isParent: boolean = false) => {
+      render(<RoomContainer roomId={roomId} playerId={playerId} />);
+      const updateHandler = (mockOn as Mock).mock.calls.find(
+        (call) => call[0] === "update_game_state",
+      )?.[1];
+
+      const mockState: VotingState = {
+        phase: "voting",
+        roomId,
+        hostId: "host-id",
+        players: [{ id: playerId, name: "自分", score: 0, hasVoted }],
+        round: 1,
+        parentPlayerId: isParent ? playerId : "parent-id",
+        theme: "たほいや",
+        meanings: [
+          { choiceIndex: 0, text: "正解の意味" },
+          { choiceIndex: 1, text: "嘘の意味1" },
+        ],
+      };
+
+      await waitFor(() => {
+        updateHandler({ gameState: mockState });
+      });
+
+      return { updateHandler, mockState };
+    };
+
+    it("子プレイヤーが未投票の場合、投票フォームが表示され、投票後に待機画面に切り替わる", async () => {
+      const user = userEvent.setup();
+      const { updateHandler, mockState } = await setupVoting(false, false);
+
+      expect(screen.getByText("たほいや")).toBeInTheDocument();
+      expect(screen.getByText("正解の意味")).toBeInTheDocument();
+
+      // 選択して投票
+      await user.click(screen.getByText("正解の意味"));
+      await user.click(screen.getByRole("button", { name: "投票する" }));
+
+      // 自分が「投票済み」になった状態をシミュレート
+      const nextState: VotingState = {
+        ...mockState,
+        players: [{ id: playerId, name: "自分", score: 0, hasVoted: true }],
+      };
+
+      await waitFor(() => {
+        updateHandler({ gameState: nextState });
+      });
+
+      expect(screen.getByText("投票完了！")).toBeInTheDocument();
+    });
+
+    it("親プレイヤーの場合、待機案内が表示される", async () => {
+      await setupVoting(false, true);
+
+      expect(screen.getByText("あなたは親です")).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "投票する" })).not.toBeInTheDocument();
+    });
+
+    it("既に投票済みの場合は待機画面が表示される", async () => {
+      await setupVoting(true);
+
+      expect(screen.getByText("投票完了！")).toBeInTheDocument();
+    });
+  });
 });
 
 // ヘルパー: Storybookのテストユーティリティに似た挙動
 function canvasElement() {
   return within(document.body);
 }
-
-import { within } from "@testing-library/react";
