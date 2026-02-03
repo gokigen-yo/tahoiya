@@ -4,6 +4,7 @@ import { Box, Heading, Text } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import type { RoomStateResponse } from "@/features/room/types/RoomStateResponse";
 import { getSocket } from "@/lib/socket";
+import { MeaningInputView } from "../components/MeaningInputView";
 import { ThemeInputView } from "../components/ThemeInputView";
 import { WaitingRoomView } from "../components/WaitingRoomView";
 
@@ -54,6 +55,12 @@ export function RoomContainer({ roomId, playerId, initialGameState }: RoomContai
     setTimeout(() => setIsLoading(false), 2000); // タイムアウトだけつけておく（実際はイベントで遷移）
   };
 
+  const handleSubmitMeaning = (meaning: string) => {
+    setIsLoading(true);
+    const socket = getSocket();
+    socket.emit("submit_meaning", { roomId, meaning });
+  };
+
   // 状態ごとのレンダリング
   if (!gameState) {
     return <Heading>ルーム情報を取得中...</Heading>;
@@ -80,6 +87,19 @@ export function RoomContainer({ roomId, playerId, initialGameState }: RoomContai
         isParent={gameState.parentPlayerId === playerId}
         parentName={parentPlayer?.name || "不明なプレイヤー"}
         onSubmit={handleSubmitTheme}
+        isLoading={isLoading}
+      />
+    );
+  }
+
+  if (gameState.phase === "meaning_input") {
+    const me = gameState.players.find((p) => p.id === playerId);
+    return (
+      <MeaningInputView
+        theme={gameState.theme}
+        isParent={gameState.parentPlayerId === playerId}
+        hasSubmitted={!!me?.hasSubmitted}
+        onSubmit={handleSubmitMeaning}
         isLoading={isLoading}
       />
     );
