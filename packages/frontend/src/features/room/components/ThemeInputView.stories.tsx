@@ -29,11 +29,13 @@ export const ParentView: Story = {
     expect(canvas.getByText("第1ラウンド")).toBeInTheDocument();
     expect(canvas.getByText(/あなたは親です/)).toBeInTheDocument();
 
-    // 入力と送信
+    const submitButton = canvas.getByRole("button", { name: "決定" });
+    await expect(submitButton).toBeDisabled(); // 初期は空なので無効
+
+    // 入力
     const input = canvas.getByPlaceholderText("お題（単語）を入力");
     await userEvent.type(input, "たほいや");
 
-    const submitButton = canvas.getByRole("button", { name: "決定" });
     await expect(submitButton).toBeEnabled();
     await userEvent.click(submitButton);
 
@@ -64,8 +66,9 @@ export const Loading: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    // loading 中はテキストが隠れるか、DOM構造が変わる可能性があるため単純に button ロールで取得
     const submitButton = canvas.getByRole("button");
+    // loading 中のテキストはコンポーネント実装に依存するため要素自体で確認
     expect(submitButton).toBeDisabled();
+    expect(submitButton).toHaveAttribute("data-loading");
   },
 };
