@@ -6,6 +6,7 @@ import type { RoomStateResponse } from "@/features/room/types/RoomStateResponse"
 import { getSocket } from "@/lib/socket";
 import { MeaningInputView } from "../components/MeaningInputView";
 import { ThemeInputView } from "../components/ThemeInputView";
+import { VotingView } from "../components/VotingView";
 import { WaitingRoomView } from "../components/WaitingRoomView";
 
 type RoomContainerProps = {
@@ -61,6 +62,12 @@ export function RoomContainer({ roomId, playerId, initialGameState }: RoomContai
     socket.emit("submit_meaning", { roomId, meaning });
   };
 
+  const handleSubmitVote = (choiceIndex: number, betPoints: number) => {
+    setIsLoading(true);
+    const socket = getSocket();
+    socket.emit("submit_vote", { roomId, choiceIndex, betPoints });
+  };
+
   // 状態ごとのレンダリング
   if (!gameState) {
     return <Heading>ルーム情報を取得中...</Heading>;
@@ -100,6 +107,20 @@ export function RoomContainer({ roomId, playerId, initialGameState }: RoomContai
         isParent={gameState.parentPlayerId === playerId}
         hasSubmitted={!!me?.hasSubmitted}
         onSubmit={handleSubmitMeaning}
+        isLoading={isLoading}
+      />
+    );
+  }
+
+  if (gameState.phase === "voting") {
+    const me = gameState.players.find((p) => p.id === playerId);
+    return (
+      <VotingView
+        theme={gameState.theme}
+        meanings={gameState.meanings}
+        isParent={gameState.parentPlayerId === playerId}
+        hasVoted={!!me?.hasVoted}
+        onSubmit={handleSubmitVote}
         isLoading={isLoading}
       />
     );
