@@ -29,9 +29,16 @@ export const HostView: Story = {
   },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    const startButton = canvas.getByRole("button", { name: "ゲームを開始する" });
+    expect(canvas.getByText(/待機ルーム/)).toBeInTheDocument();
+    expect(canvas.getByText(/test-room-id/)).toBeInTheDocument();
 
+    // プレイヤーリストの確認
+    expect(canvas.getByText(/プレイヤー1/)).toBeInTheDocument();
+    expect(canvas.getByText(/プレイヤー4/)).toBeInTheDocument();
+
+    const startButton = canvas.getByRole("button", { name: /ゲームを開始する/ });
     await expect(startButton).toBeInTheDocument();
+    await expect(startButton).toBeEnabled();
     await userEvent.click(startButton);
     await expect(args.onStartGame).toHaveBeenCalled();
   },
@@ -45,11 +52,14 @@ export const GuestView: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(
-      canvas.queryByRole("button", { name: "ゲームを開始する" }),
+      canvas.queryByRole("button", { name: /ゲームを開始する/ }),
     ).not.toBeInTheDocument();
     await expect(
-      canvas.getByText("ホストがゲームを開始するのを待っています..."),
+      canvas.getByText(/ホストがゲームを開始するのを待っています.../),
     ).toBeInTheDocument();
+
+    // プレイヤーリストが正しく表示されているか
+    expect(canvas.getByText(/プレイヤー2/)).toBeInTheDocument();
   },
 };
 
@@ -61,8 +71,27 @@ export const NotEnoughPlayers: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const startButton = canvas.getByRole("button", { name: "ゲームを開始する" });
+    const startButton = canvas.getByRole("button", { name: /ゲームを開始する/ });
     await expect(startButton).toBeDisabled();
+    // 3人必要なので、1人しかいない場合はあと2人必要
+    await expect(canvas.getByText(/あと.*2.*人必要です/)).toBeInTheDocument();
+  },
+};
+
+export const TwoPlayers: Story = {
+  name: "2人の場合でも、開始ボタンは無効化される",
+  args: {
+    isHost: true,
+    players: [
+      { id: "1", name: "プレイヤー1" },
+      { id: "2", name: "プレイヤー2" },
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const startButton = canvas.getByRole("button", { name: /ゲームを開始する/ });
+    await expect(startButton).toBeDisabled();
+    await expect(canvas.getByText(/あと.*1.*人必要です/)).toBeInTheDocument();
   },
 };
 
@@ -74,7 +103,11 @@ export const Loading: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const startButton = canvas.getByRole("button", { name: "開始中..." });
+    const buttons = canvas.getAllByRole("button");
+    const startButton = buttons.find(
+      (b) => b.hasAttribute("data-loading") || b.textContent?.includes("開始中"),
+    );
+    await expect(startButton).toBeDefined();
     await expect(startButton).toBeDisabled();
   },
 };

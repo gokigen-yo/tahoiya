@@ -56,6 +56,7 @@ export function JoinRoomForm({ onSubmit, isLoading, error }: JoinRoomFormProps) 
               size="lg"
               loading={isLoading}
               loadingText="参加中"
+              disabled={!playerName.trim() || isLoading}
             >
               ルームに参加
             </Button>

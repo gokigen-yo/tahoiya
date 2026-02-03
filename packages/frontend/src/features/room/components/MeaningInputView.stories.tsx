@@ -28,10 +28,12 @@ export const ParentInput: Story = {
     expect(canvas.getByRole("heading", { name: "たほいや" })).toBeInTheDocument();
     expect(canvas.getByText(/正しい意味/)).toBeInTheDocument();
 
+    const submitButton = canvas.getByRole("button", { name: "決定" });
+    await expect(submitButton).toBeDisabled();
+
     const textarea = canvas.getByRole("textbox");
     await userEvent.type(textarea, "イノシシを追うための小屋");
 
-    const submitButton = canvas.getByRole("button", { name: "決定" });
     await expect(submitButton).toBeEnabled();
     await userEvent.click(submitButton);
 
@@ -44,12 +46,22 @@ export const ChildInput: Story = {
   args: {
     isParent: false,
   },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
 
+    expect(canvas.getByRole("heading", { name: "たほいや" })).toBeInTheDocument();
     expect(canvas.getByText(/嘘の意味/)).toBeInTheDocument();
     const textarea = canvas.getByPlaceholderText("もっともらしい嘘の意味を入力");
     await expect(textarea).toBeInTheDocument();
+
+    const submitButton = canvas.getByRole("button", { name: "決定" });
+    await expect(submitButton).toBeDisabled();
+
+    await userEvent.type(textarea, "江戸時代の髪型の一種");
+    await expect(submitButton).toBeEnabled();
+    await userEvent.click(submitButton);
+
+    await expect(args.onSubmit).toHaveBeenCalledWith("江戸時代の髪型の一種");
   },
 };
 
@@ -64,5 +76,6 @@ export const Submitted: Story = {
     expect(canvas.getByText("送信しました！")).toBeInTheDocument();
     expect(canvas.getByText(/他のプレイヤーの入力待ちです/)).toBeInTheDocument();
     expect(canvas.queryByRole("textbox")).not.toBeInTheDocument();
+    expect(canvas.queryByRole("button", { name: "決定" })).not.toBeInTheDocument();
   },
 };
