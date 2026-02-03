@@ -67,17 +67,24 @@ export function WaitingRoomView({
         </Card.Root>
 
         {isHost ? (
-          <Button
-            colorScheme="blue"
-            size="lg"
-            width="full"
-            onClick={onStartGame}
-            loading={isLoading}
-            loadingText="開始中..."
-            disabled={players.length < 2}
-          >
-            ゲームを開始する
-          </Button>
+          <VStack gap={4} width="full">
+            <Button
+              colorScheme="blue"
+              size="lg"
+              width="full"
+              onClick={onStartGame}
+              loading={isLoading}
+              loadingText="開始中..."
+              disabled={players.length < 3}
+            >
+              ゲームを開始する
+            </Button>
+            {players.length < 3 && (
+              <Text fontSize="sm" color="red.500">
+                (あと{3 - players.length}人必要です)
+              </Text>
+            )}
+          </VStack>
         ) : (
           <Box textAlign="center" p={4} bg="gray.100" borderRadius="md">
             <Text>ホストがゲームを開始するのを待っています...</Text>
