@@ -1,9 +1,10 @@
 "use client";
 
-import { Box, Heading, Text, VStack } from "@chakra-ui/react";
+import { Box, Heading, Text } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import type { RoomStateResponse } from "@/features/room/types/RoomStateResponse";
 import { getSocket } from "@/lib/socket";
+import { FinalResultView } from "../components/FinalResultView";
 import { MeaningInputView } from "../components/MeaningInputView";
 import { RoundResultView } from "../components/RoundResultView";
 import { ThemeInputView } from "../components/ThemeInputView";
@@ -148,16 +149,13 @@ export function RoomContainer({ roomId, playerId, initialGameState }: RoomContai
     );
   }
 
+  if (gameState.phase === "final_result") {
+    return <FinalResultView players={gameState.players} winnerIds={gameState.winnerIds} />;
+  }
+
   return (
     <Box p={4}>
-      <Text>Game Phase: {gameState.phase}</Text>
-      {gameState.phase === "final_result" && (
-        <VStack gap={4}>
-          <Heading>最終結果</Heading>
-          <Text>優勝者: {gameState.winnerIds.join(", ")}</Text>
-          {/* TODO: 最終結果ビューの実装 */}
-        </VStack>
-      )}
+      <Text>Finalizing Game...</Text>
     </Box>
   );
 }

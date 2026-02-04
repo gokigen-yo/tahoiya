@@ -23,6 +23,12 @@ vi.mock("@/lib/socket", () => ({
   getSocket: () => mockSocket,
 }));
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+  }),
+}));
+
 describe("RoomContainer", () => {
   const roomId = "test-room-id";
   const playerId = "player-1";
@@ -387,6 +393,37 @@ describe("RoomContainer", () => {
         screen.getByText(/ホストが次のラウンドを開始するのを待っています/),
       ).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "次のラウンドへ" })).not.toBeInTheDocument();
+    });
+  });
+
+  describe("最終結果フェーズ（final_result）", () => {
+    it("最終結果画面が表示され、優勝者が確認できる", async () => {
+      render(<RoomContainer roomId={roomId} playerId={playerId} />);
+      const updateHandler = (mockOn as Mock).mock.calls.find(
+        (call) => call[0] === "update_game_state",
+      )?.[1];
+
+      const mockFinalState = {
+        phase: "final_result",
+        roomId,
+        hostId: "host-id",
+        players: [
+          { id: "player-1", name: "自分", score: 30 },
+          { id: "player-2", name: "相手", score: 20 },
+        ],
+        winnerIds: ["player-1"],
+      };
+
+      await waitFor(() => {
+        updateHandler({ gameState: mockFinalState });
+      });
+
+      expect(screen.getByText("最終結果発表")).toBeInTheDocument();
+      // '自分'は優勝者エリアとスコア表の2箇所に表示される
+      expect(screen.getAllByText("自分")).toHaveLength(2);
+      expect(screen.getByText("30")).toBeInTheDocument();
+      // 優勝者の強調表示（Badgeなど）を確認
+      expect(screen.getByText("WINNER")).toBeInTheDocument();
     });
   });
 });
