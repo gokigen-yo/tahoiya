@@ -314,6 +314,81 @@ describe("RoomContainer", () => {
       expect(screen.getByText("投票完了！")).toBeInTheDocument();
     });
   });
+
+  describe("結果発表フェーズ（round_result）", () => {
+    const mockResultState = {
+      phase: "round_result",
+      roomId,
+      hostId: "host-id",
+      players: [
+        { id: "player-1", name: "自分", score: 10 },
+        { id: "player-2", name: "相手1", score: 5 },
+        { id: "parent-id", name: "親プレイヤー", score: 8 },
+      ],
+      round: 1,
+      parentPlayerId: "parent-id",
+      theme: "たほいや",
+      meanings: [
+        { choiceIndex: 0, text: "正解の意味", authorId: "parent-id" },
+        { choiceIndex: 1, text: "嘘の意味1", authorId: "player-1" },
+      ],
+      votes: [{ voterId: "player-2", choiceIndex: 1, betPoints: 2 }],
+    };
+
+    it("結果画面が表示され、正解や投票内容が確認できる", async () => {
+      render(<RoomContainer roomId={roomId} playerId={playerId} />);
+      const updateHandler = (mockOn as Mock).mock.calls.find(
+        (call) => call[0] === "update_game_state",
+      )?.[1];
+
+      await waitFor(() => {
+        updateHandler({ gameState: mockResultState });
+      });
+
+      expect(screen.getByText("たほいや")).toBeInTheDocument();
+      expect(screen.getByText("正解の意味")).toBeInTheDocument();
+      expect(screen.getByText("正解！")).toBeInTheDocument();
+      expect(screen.getByText("嘘の意味1")).toBeInTheDocument();
+      expect(screen.getByText("自分 の嘘")).toBeInTheDocument();
+      expect(screen.getByText("相手1 (2点)")).toBeInTheDocument();
+    });
+
+    it("ホストの場合、次のラウンドへボタンが表示され送信できる", async () => {
+      const user = userEvent.setup();
+      // 自分がホストの場合
+      const hostState = { ...mockResultState, hostId: playerId };
+
+      render(<RoomContainer roomId={roomId} playerId={playerId} />);
+      const updateHandler = (mockOn as Mock).mock.calls.find(
+        (call) => call[0] === "update_game_state",
+      )?.[1];
+
+      await waitFor(() => {
+        updateHandler({ gameState: hostState });
+      });
+
+      const nextButton = screen.getByRole("button", { name: "次のラウンドへ" });
+      await user.click(nextButton);
+
+      expect(mockEmit).toHaveBeenCalledWith("next_round", { roomId });
+    });
+
+    it("ホストでない場合、待機メッセージが表示される", async () => {
+      render(<RoomContainer roomId={roomId} playerId={playerId} />);
+      const updateHandler = (mockOn as Mock).mock.calls.find(
+        (call) => call[0] === "update_game_state",
+      )?.[1];
+
+      await waitFor(() => {
+        updateHandler({ gameState: mockResultState });
+      });
+
+      expect(
+        screen.getByText(/ホストが次のラウンドを開始するのを待っています/),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "次のラウンドへ" })).not.toBeInTheDocument();
+    });
+  });
 });
 
 // ヘルパー: Storybookのテストユーティリティに似た挙動
