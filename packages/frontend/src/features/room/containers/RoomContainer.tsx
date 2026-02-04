@@ -1,10 +1,11 @@
 "use client";
 
-import { Box, Heading, Text } from "@chakra-ui/react";
+import { Box, Heading, Text, VStack } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import type { RoomStateResponse } from "@/features/room/types/RoomStateResponse";
 import { getSocket } from "@/lib/socket";
 import { MeaningInputView } from "../components/MeaningInputView";
+import { RoundResultView } from "../components/RoundResultView";
 import { ThemeInputView } from "../components/ThemeInputView";
 import { VotingView } from "../components/VotingView";
 import { WaitingRoomView } from "../components/WaitingRoomView";
@@ -68,6 +69,12 @@ export function RoomContainer({ roomId, playerId, initialGameState }: RoomContai
     socket.emit("submit_vote", { roomId, choiceIndex, betPoints });
   };
 
+  const handleNextRound = () => {
+    setIsLoading(true);
+    const socket = getSocket();
+    socket.emit("next_round", { roomId });
+  };
+
   // 状態ごとのレンダリング
   if (!gameState) {
     return <Heading>ルーム情報を取得中...</Heading>;
@@ -126,10 +133,31 @@ export function RoomContainer({ roomId, playerId, initialGameState }: RoomContai
     );
   }
 
+  if (gameState.phase === "round_result") {
+    return (
+      <RoundResultView
+        theme={gameState.theme}
+        meanings={gameState.meanings}
+        votes={gameState.votes}
+        players={gameState.players}
+        parentPlayerId={gameState.parentPlayerId}
+        isHost={gameState.hostId === playerId}
+        onNextRound={handleNextRound}
+        isLoading={isLoading}
+      />
+    );
+  }
+
   return (
     <Box p={4}>
       <Text>Game Phase: {gameState.phase}</Text>
-      {/* TODO: 他のフェーズのコンポーネントをここに実装していく */}
+      {gameState.phase === "final_result" && (
+        <VStack gap={4}>
+          <Heading>最終結果</Heading>
+          <Text>優勝者: {gameState.winnerIds.join(", ")}</Text>
+          {/* TODO: 最終結果ビューの実装 */}
+        </VStack>
+      )}
     </Box>
   );
 }
