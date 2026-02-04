@@ -1,5 +1,5 @@
 import { Box } from "@chakra-ui/react";
-import { Header } from "@/components/Header/Header";
+import { Header } from "@/components/Header";
 import { Providers } from "./providers";
 
 export const metadata = {
