@@ -1,3 +1,5 @@
+import { Box } from "@chakra-ui/react";
+import { Header } from "@/components/Header";
 import { Providers } from "./providers";
 
 export const metadata = {
@@ -9,7 +11,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ja" suppressHydrationWarning>
       <body>
-        <Providers>{children}</Providers>
+        <Providers>
+          <Header />
+          <Box as="main" flex="1">
+            {children}
+          </Box>
+        </Providers>
       </body>
     </html>
   );
