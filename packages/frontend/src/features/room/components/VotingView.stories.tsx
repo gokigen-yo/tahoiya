@@ -39,9 +39,8 @@ export const ChildInput: Story = {
 
     await expect(submitButton).toBeEnabled();
 
-    const betInput = canvas.getByLabelText("賭け点");
-    await userEvent.clear(betInput);
-    await userEvent.type(betInput, "3");
+    const betButton = canvas.getByRole("button", { name: "3点" });
+    await userEvent.click(betButton);
 
     await userEvent.click(submitButton);
 
@@ -54,12 +53,18 @@ export const ChildVoted: Story = {
   args: {
     hasVoted: true,
     selectedChoiceIndex: 1,
+    selectedBetPoints: 3,
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     expect(canvas.getByText("投票完了！")).toBeInTheDocument();
-    expect(canvas.getByText("(あなたの選択)")).toBeInTheDocument();
     expect(canvas.getByText("江戸時代の髪型の一種")).toBeInTheDocument();
+
+    // 賭け点も表示されていることを確認 (3点を選択済み)
+    const betButton = canvas.getByRole("button", { name: "3点" });
+    expect(betButton).toBeInTheDocument();
+    expect(betButton).toBeDisabled();
+
     expect(canvas.queryByRole("button", { name: /投票する/i })).not.toBeInTheDocument();
   },
 };
@@ -74,6 +79,7 @@ export const ParentWaiting: Story = {
     expect(canvas.getByText("あなたは親です")).toBeInTheDocument();
     expect(canvas.getByText("提示されている意味の一覧:")).toBeInTheDocument();
     expect(canvas.getByText("冬に咲く珍しい花")).toBeInTheDocument();
+
     expect(canvas.queryByRole("button", { name: /投票する/i })).not.toBeInTheDocument();
   },
 };
