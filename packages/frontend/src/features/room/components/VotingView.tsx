@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Button, Field, Heading, Input, Text, VStack } from "@chakra-ui/react";
+import { Box, Button, Field, Heading, HStack, Text, VStack } from "@chakra-ui/react";
 import { useState } from "react";
 
 type Meaning = {
@@ -14,6 +14,7 @@ type VotingViewProps = {
   isParent: boolean;
   hasVoted: boolean;
   selectedChoiceIndex?: number;
+  selectedBetPoints?: number;
   onSubmit: (choiceIndex: number, betPoints: number) => void;
   isLoading: boolean;
 };
@@ -24,13 +25,16 @@ export function VotingView({
   isParent,
   hasVoted,
   selectedChoiceIndex,
+  selectedBetPoints,
   onSubmit,
   isLoading,
 }: VotingViewProps) {
   const [selectedChoice, setSelectedChoice] = useState<string | null>(
     selectedChoiceIndex !== undefined ? selectedChoiceIndex.toString() : null,
   );
-  const [betPoints, setBetPoints] = useState<string>("1");
+  const [betPoints, setBetPoints] = useState<string>(
+    selectedBetPoints !== undefined ? selectedBetPoints.toString() : "1",
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,89 +61,90 @@ export function VotingView({
               const isSelected = selectedChoice === meaning.choiceIndex.toString();
               const canVote = !isParent && !hasVoted;
 
-              if (canVote) {
-                return (
-                  <Button
-                    key={meaning.choiceIndex}
-                    variant={isSelected ? "solid" : "outline"}
-                    colorPalette={isSelected ? "blue" : "gray"}
-                    onClick={() => setSelectedChoice(meaning.choiceIndex.toString())}
-                    disabled={isLoading}
-                    justifyContent="flex-start"
-                    height="auto"
-                    py={3}
-                    whiteSpace="normal"
-                    textAlign="left"
-                  >
-                    {meaning.text}
-                  </Button>
-                );
-              }
-
               return (
-                <Box
+                <Button
                   key={meaning.choiceIndex}
-                  p={3}
-                  borderWidth={1}
-                  borderRadius="md"
+                  variant={isSelected ? "solid" : "outline"}
+                  colorPalette={isSelected ? "blue" : "gray"}
+                  onClick={
+                    canVote ? () => setSelectedChoice(meaning.choiceIndex.toString()) : undefined
+                  }
+                  disabled={!canVote || isLoading}
+                  justifyContent="flex-start"
+                  height="auto"
+                  py={3}
+                  whiteSpace="normal"
                   textAlign="left"
-                  bg={isSelected ? "blue.50" : "gray.50"}
-                  borderColor={isSelected ? "blue.200" : "gray.200"}
                 >
-                  {meaning.text}
-                  {isSelected && (
-                    <Text as="span" ml={2} fontSize="xs" fontWeight="bold" color="blue.600">
-                      (あなたの選択)
-                    </Text>
-                  )}
-                </Box>
+                  <Box as="span" flex="1">
+                    {meaning.text}
+                  </Box>
+                </Button>
               );
             })}
           </VStack>
         </Box>
 
-        {isParent ? (
-          <Box textAlign="center" py={4} borderTopWidth={1} pt={6}>
-            <Text fontSize="lg" fontWeight="bold" mb={2}>
-              あなたは親です
-            </Text>
-            <Text color="gray.600">子プレイヤーが投票を終えるまでお待ちください。</Text>
-          </Box>
-        ) : hasVoted ? (
-          <Box textAlign="center" py={4} borderTopWidth={1} pt={6}>
-            <Text fontSize="lg" fontWeight="bold" mb={2}>
-              投票完了！
-            </Text>
-            <Text color="gray.600">他のプレイヤーの投票待ちです...</Text>
-          </Box>
-        ) : (
-          <form onSubmit={handleSubmit}>
-            <VStack gap={6} align="stretch" borderTopWidth={1} pt={6}>
+        <Box borderTopWidth={1} pt={6}>
+          <VStack gap={6} align="stretch">
+            {isParent && (
+              <Box textAlign="center" mb={2}>
+                <Text fontSize="lg" fontWeight="bold" mb={2}>
+                  あなたは親です
+                </Text>
+                <Text color="gray.600">子プレイヤーが投票を終えるまでお待ちください。</Text>
+              </Box>
+            )}
+
+            {!isParent && (
               <Field.Root>
                 <Field.Label>賭け点</Field.Label>
-                <Input
-                  type="number"
-                  value={betPoints}
-                  onChange={(e) => setBetPoints(e.target.value)}
-                  min={1}
-                  max={3}
-                  disabled={isLoading}
-                />
-                <Field.HelperText>1〜3点の間で賭けてください。</Field.HelperText>
-              </Field.Root>
+                <HStack gap={4}>
+                  {["1", "2", "3"].map((points) => {
+                    const isSelected = betPoints === points;
+                    const canVote = !hasVoted;
 
-              <Button
-                type="submit"
-                colorPalette="blue"
-                size="lg"
-                loading={isLoading}
-                disabled={selectedChoice === null || isLoading}
-              >
-                投票する
-              </Button>
-            </VStack>
-          </form>
-        )}
+                    return (
+                      <Button
+                        key={points}
+                        flex="1"
+                        variant={isSelected ? "solid" : "outline"}
+                        colorPalette={isSelected ? "orange" : "gray"}
+                        onClick={canVote ? () => setBetPoints(points) : undefined}
+                        disabled={!canVote || isLoading}
+                      >
+                        {points}点
+                      </Button>
+                    );
+                  })}
+                </HStack>
+                {!hasVoted && <Field.HelperText>1〜3点の間で賭けてください。</Field.HelperText>}
+              </Field.Root>
+            )}
+
+            {!isParent &&
+              (hasVoted ? (
+                <Box textAlign="center" py={2}>
+                  <Text fontSize="lg" fontWeight="bold" color="blue.600">
+                    投票完了！
+                  </Text>
+                  <Text color="gray.600" fontSize="sm">
+                    他のプレイヤーの投票待ちです...
+                  </Text>
+                </Box>
+              ) : (
+                <Button
+                  onClick={handleSubmit}
+                  colorPalette="blue"
+                  size="lg"
+                  loading={isLoading}
+                  disabled={selectedChoice === null || isLoading}
+                >
+                  投票する
+                </Button>
+              ))}
+          </VStack>
+        </Box>
       </VStack>
     </Box>
   );
