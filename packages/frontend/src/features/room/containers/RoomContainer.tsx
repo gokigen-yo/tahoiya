@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import type { RoomStateResponse } from "@/features/room/types/RoomStateResponse";
 import { getSocket } from "@/lib/socket";
 import { FinalResultView } from "../components/FinalResultView";
+import { GameLayout } from "../components/GameLayout";
 import { MeaningInputView } from "../components/MeaningInputView";
 import { RoundResultView } from "../components/RoundResultView";
 import { ThemeInputView } from "../components/ThemeInputView";
@@ -97,55 +98,79 @@ export function RoomContainer({ roomId, playerId, initialGameState }: RoomContai
   if (gameState.phase === "theme_input") {
     const parentPlayer = gameState.players.find((p) => p.id === gameState.parentPlayerId);
     return (
-      <ThemeInputView
-        round={gameState.round}
-        isParent={gameState.parentPlayerId === playerId}
-        parentName={parentPlayer?.name || "不明なプレイヤー"}
-        onSubmit={handleSubmitTheme}
-        isLoading={isLoading}
-      />
+      <GameLayout
+        players={gameState.players}
+        currentPlayerId={playerId}
+        parentPlayerId={gameState.parentPlayerId}
+      >
+        <ThemeInputView
+          round={gameState.round}
+          isParent={gameState.parentPlayerId === playerId}
+          parentName={parentPlayer?.name || "不明なプレイヤー"}
+          onSubmit={handleSubmitTheme}
+          isLoading={isLoading}
+        />
+      </GameLayout>
     );
   }
 
   if (gameState.phase === "meaning_input") {
     const me = gameState.players.find((p) => p.id === playerId);
     return (
-      <MeaningInputView
-        theme={gameState.theme}
-        isParent={gameState.parentPlayerId === playerId}
-        hasSubmitted={!!me?.hasSubmitted}
-        onSubmit={handleSubmitMeaning}
-        isLoading={isLoading}
-      />
+      <GameLayout
+        players={gameState.players}
+        currentPlayerId={playerId}
+        parentPlayerId={gameState.parentPlayerId}
+      >
+        <MeaningInputView
+          theme={gameState.theme}
+          isParent={gameState.parentPlayerId === playerId}
+          hasSubmitted={!!me?.hasSubmitted}
+          onSubmit={handleSubmitMeaning}
+          isLoading={isLoading}
+        />
+      </GameLayout>
     );
   }
 
   if (gameState.phase === "voting") {
     const me = gameState.players.find((p) => p.id === playerId);
     return (
-      <VotingView
-        theme={gameState.theme}
-        meanings={gameState.meanings}
-        isParent={gameState.parentPlayerId === playerId}
-        hasVoted={!!me?.hasVoted}
-        onSubmit={handleSubmitVote}
-        isLoading={isLoading}
-      />
+      <GameLayout
+        players={gameState.players}
+        currentPlayerId={playerId}
+        parentPlayerId={gameState.parentPlayerId}
+      >
+        <VotingView
+          theme={gameState.theme}
+          meanings={gameState.meanings}
+          isParent={gameState.parentPlayerId === playerId}
+          hasVoted={!!me?.hasVoted}
+          onSubmit={handleSubmitVote}
+          isLoading={isLoading}
+        />
+      </GameLayout>
     );
   }
 
   if (gameState.phase === "round_result") {
     return (
-      <RoundResultView
-        theme={gameState.theme}
-        meanings={gameState.meanings}
-        votes={gameState.votes}
+      <GameLayout
         players={gameState.players}
+        currentPlayerId={playerId}
         parentPlayerId={gameState.parentPlayerId}
-        isHost={gameState.hostId === playerId}
-        onNextRound={handleNextRound}
-        isLoading={isLoading}
-      />
+      >
+        <RoundResultView
+          theme={gameState.theme}
+          meanings={gameState.meanings}
+          votes={gameState.votes}
+          players={gameState.players}
+          parentPlayerId={gameState.parentPlayerId}
+          isHost={gameState.hostId === playerId}
+          onNextRound={handleNextRound}
+          isLoading={isLoading}
+        />
+      </GameLayout>
     );
   }
 
