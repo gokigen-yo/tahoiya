@@ -53,9 +53,9 @@ describe("JoinRoomContainer", () => {
     });
 
     expect(screen.queryByRole("heading", { name: "ルームに参加" })).not.toBeInTheDocument();
-    // 待機ルームが表示されているはず
-    expect(screen.getByText("待機ルーム")).toBeInTheDocument();
-    expect(screen.getByText("参加プレイヤー")).toBeInTheDocument();
+    expect(screen.getAllByText("待機ルーム")).toHaveLength(1);
+    // 右タブと合わせて2つ
+    expect(screen.getAllByText("参加プレイヤー")).toHaveLength(2);
   });
 
   it("サーバーからエラーが返された場合、エラーメッセージが表示されフォームが残る", async () => {

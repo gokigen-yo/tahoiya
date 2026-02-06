@@ -69,9 +69,10 @@ describe("RoomContainer", () => {
     });
 
     expect(screen.getByText("待機ルーム")).toBeInTheDocument();
-    expect(screen.getByText("自分")).toBeInTheDocument();
-    expect(screen.getByText("相手1")).toBeInTheDocument();
-    expect(screen.getByText("相手2")).toBeInTheDocument();
+    // 右タブと合わせて2つ
+    expect(screen.getAllByText("自分")).toHaveLength(2);
+    expect(screen.getAllByText("相手1")).toHaveLength(2);
+    expect(screen.getAllByText("相手2")).toHaveLength(2);
     // ホストなので開始ボタンがある
     expect(screen.getByRole("button", { name: "ゲームを開始する" })).toBeInTheDocument();
   });
@@ -419,8 +420,8 @@ describe("RoomContainer", () => {
       });
 
       expect(screen.getByText("最終結果発表")).toBeInTheDocument();
-      // '自分'は優勝者エリアとスコア表の2箇所に表示される
-      expect(screen.getAllByText("自分")).toHaveLength(2);
+      // '自分'は優勝者エリアとスコア表、右タブの3箇所に表示される
+      expect(screen.getAllByText("自分")).toHaveLength(3);
       expect(screen.getByText("30")).toBeInTheDocument();
       // 優勝者の強調表示（Badgeなど）を確認
       expect(screen.getByText("WINNER")).toBeInTheDocument();

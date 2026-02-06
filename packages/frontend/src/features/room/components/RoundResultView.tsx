@@ -118,39 +118,6 @@ export function RoundResultView({
           </VStack>
         </Box>
 
-        <Box>
-          <Heading size="md" mb={4}>
-            現在のスコア
-          </Heading>
-          <Table.Root size="sm" variant="outline">
-            <Table.Header>
-              <Table.Row>
-                <Table.ColumnHeader>プレイヤー</Table.ColumnHeader>
-                <Table.ColumnHeader textAlign="right">合計スコア</Table.ColumnHeader>
-              </Table.Row>
-            </Table.Header>
-            <Table.Body>
-              {players
-                .sort((a, b) => b.score - a.score)
-                .map((player) => (
-                  <Table.Row key={player.id}>
-                    <Table.Cell>
-                      {player.name}
-                      {player.id === parentPlayerId && (
-                        <Badge ml={2} colorPalette="purple" size="xs">
-                          親
-                        </Badge>
-                      )}
-                    </Table.Cell>
-                    <Table.Cell textAlign="right" fontWeight="bold">
-                      {player.score}
-                    </Table.Cell>
-                  </Table.Row>
-                ))}
-            </Table.Body>
-          </Table.Root>
-        </Box>
-
         {isHost && (
           <Button
             onClick={onNextRound}
