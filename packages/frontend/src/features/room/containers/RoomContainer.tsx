@@ -85,13 +85,15 @@ export function RoomContainer({ roomId, playerId, initialGameState }: RoomContai
   // 待機画面
   if (gameState.phase === "waiting_for_join") {
     return (
-      <WaitingRoomView
-        roomId={roomId}
-        players={gameState.players}
-        isHost={gameState.hostId === playerId}
-        onStartGame={handleStartGame}
-        isLoading={isLoading}
-      />
+      <GameLayout players={gameState.players} currentPlayerId={playerId}>
+        <WaitingRoomView
+          roomId={roomId}
+          players={gameState.players}
+          isHost={gameState.hostId === playerId}
+          onStartGame={handleStartGame}
+          isLoading={isLoading}
+        />
+      </GameLayout>
     );
   }
 
@@ -175,7 +177,11 @@ export function RoomContainer({ roomId, playerId, initialGameState }: RoomContai
   }
 
   if (gameState.phase === "final_result") {
-    return <FinalResultView players={gameState.players} winnerIds={gameState.winnerIds} />;
+    return (
+      <GameLayout players={gameState.players} currentPlayerId={playerId}>
+        <FinalResultView players={gameState.players} winnerIds={gameState.winnerIds} />
+      </GameLayout>
+    );
   }
 
   return (
