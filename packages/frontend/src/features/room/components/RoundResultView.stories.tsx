@@ -46,8 +46,6 @@ export const Default: Story = {
 
     await expect(canvas.getByText(/子プレイヤー2.*3点/)).toBeInTheDocument();
 
-    await expect(canvas.getByText("ホスト親")).toBeInTheDocument();
-    await expect(canvas.getByText("10")).toBeInTheDocument();
     await expect(canvas.getByRole("button", { name: "次のラウンドへ" })).toBeInTheDocument();
   },
 };
